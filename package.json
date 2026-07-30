@@ -1,0 +1,24 @@
+{
+  "name": "dept-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "我的部门登记表 — a login-protected internal records app (Next.js + Neon + Vercel workshop template)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "1.1.0",
+    "next": "15.5.18",
+    "react": "19.0.6",
+    "react-dom": "19.0.6"
+  },
+  "devDependencies": {
+    "@types/node": "25.9.1",
+    "@types/react": "19.2.15",
+    "@types/react-dom": "19.2.3",
+    "typescript": "6.0.3"
+  }
+}
