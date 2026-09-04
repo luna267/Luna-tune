@@ -5,8 +5,8 @@
       "x": 0,
       "y": 0,
       "w": 1160,
-      "h": 3170,
-      "title": "A - Frontier Instrument"
+      "h": 3200,
+      "title": "A - Frontier Instrument (v9)"
     },
     {
       "file": "MachineVision.dc.html",
@@ -79,6 +79,7 @@
     }
   ],
   "launch": {
-    "view": "canvas"
+    "view": "focused",
+    "file": "Main.dc.html"
   }
 }
