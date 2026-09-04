@@ -12,13 +12,19 @@
   <style>
     body { margin: 0; background: #0C0B0A; color: #F2F0EA;
       font-family: "Literata", Georgia, serif; font-variation-settings: "opsz" 14;
-      font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
-    a { color: #F2F0EA; text-decoration: none; border-bottom: 1px solid rgba(242,240,234,0.34); }
-    a:hover { border-bottom-color: #C8341A; }
-    /* one grid, three axes, reused by every module: 96 | 420 | rest */
-    .row { display: grid; grid-template-columns: 96px 440px minmax(0, 1fr); gap: 44px; align-items: baseline; }
-    .lbl { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; }
-    .disp { font-family: "Literata", Georgia, serif; font-variation-settings: "opsz" 72; font-weight: 400; }
+      font-variant-numeric: oldstyle-nums; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; border-bottom: 1px solid currentColor; }
+    /* two derived grids: both share the 96px gutter and the right rule */
+    .row  { display: grid; grid-template-columns: 96px 440px minmax(0, 1fr); gap: 44px; align-items: baseline; }
+    .trow { display: grid; grid-template-columns: 96px 236px minmax(0, 1fr); gap: 44px; align-items: baseline; }
+    /* one display tier, one statement tier, one section-head tier */
+    .disp { font-family: "Literata", Georgia, serif; font-variation-settings: "opsz" 72; font-weight: 400; font-variant-numeric: lining-nums; }
+    .lbl  { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
+    .kick { font-family: "Literata", Georgia, serif; font-variation-settings: "opsz" 14; font-style: italic; font-size: 15px; }
+    .mono { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+    /* the device: one weight, one overhang, colour alone marks the last line */
+    .strike { position: relative; display: inline-block; line-height: 1; white-space: nowrap; }
+    .strike i { position: absolute; left: -7px; right: -7px; top: 53%; height: 5px; transform: translateY(-50%); }
   </style>
 </helmet>
 
@@ -26,125 +32,107 @@
 
   <!-- ═══════ nav ═══════ -->
   <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 30px 0 26px;">
-    <div style="display: flex; align-items: baseline; gap: 18px;">
-      <span class="disp" style="font-size: 25px; letter-spacing: 0.055em; font-weight: 500;">IOSF</span>
-      <span class="lbl" style="color: #7C776E;">A fund by IOSG Ventures</span>
+    <div style="display: flex; align-items: baseline; gap: 22px;">
+      <span class="disp" style="font-size: 31px; letter-spacing: 0.05em; font-weight: 500;">IOSF</span>
+      <span style="width: 1px; height: 15px; background: rgba(242,240,234,0.22); display: inline-block;"></span>
+      <span class="lbl" style="color: #9A948A;">A fund by IOSG Ventures</span>
     </div>
-    <div style="display: flex; align-items: baseline; gap: 32px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.05em; color: #A6A29A;">
+    <div style="display: flex; align-items: baseline; gap: 32px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.05em; color: #B4AEA4;">
       <span>Thesis</span><span>Portfolio</span><span>Founders</span>
-      <span style="display: inline-flex; align-items: baseline; gap: 10px; padding-left: 32px;">
+      <span style="display: inline-flex; align-items: baseline; gap: 10px; padding-left: 30px;">
         <span style="color: #F2F0EA;">EN</span>
-        <span style="color: rgba(242,240,234,0.24);">/</span>
-        <span style="font-family: 'Noto Sans SC', 'PingFang SC', sans-serif; font-size: 11px; letter-spacing: 0; color: #7C776E;">中文</span>
+        <span style="color: rgba(242,240,234,0.26);">/</span>
+        <span style="font-family: 'Noto Sans SC', 'PingFang SC', sans-serif; font-size: 10.5px; letter-spacing: 0; color: #9A948A; position: relative; top: -1px;">中文</span>
       </span>
     </div>
   </div>
 
   <!-- ═══════ hero ═══════ -->
-  <div style="padding: 92px 0 96px; border-top: 1px solid rgba(242,240,234,0.16);">
-    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 44px; align-items: baseline; margin-bottom: 66px;">
-      <div class="lbl" style="color: #7C776E;">Frontier</div>
-      <h1 class="disp" style="font-size: 84px; line-height: 1.02; letter-spacing: -0.021em; margin: 0;">
-        The <span style="font-style: italic; letter-spacing: 0.01em;">G</span> was Genesis.<br>The <span style="font-style: italic; letter-spacing: 0.03em;">F</span> is Frontier.
+  <div style="padding: 88px 0 0; border-top: 1px solid rgba(242,240,234,0.16);">
+    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 44px; align-items: baseline; margin-bottom: 62px;">
+      <div class="kick" style="color: #9A948A;">Frontier</div>
+      <h1 class="disp" style="font-size: 76px; line-height: 1.04; letter-spacing: -0.021em; margin: 0;">
+        The <span style="font-style: italic; letter-spacing: 0.012em;">G</span> was Genesis.<br>The <span style="font-style: italic; letter-spacing: 0.032em;">F</span> is Frontier.
       </h1>
     </div>
 
-    <div class="row">
+    <div class="row" style="margin-bottom: 76px;">
       <div></div>
       <div>
-        <p style="font-size: 15.5px; line-height: 1.64; color: #A6A29A; margin: 0 0 38px;">
+        <p style="font-size: 15.5px; line-height: 1.64; color: #B4AEA4; margin: 0 0 30px;">
           In 2017 we backed open, programmable systems at their beginning. Intelligence is the new open system. Same team, same discipline.
         </p>
-        <div style="display: flex; align-items: baseline; gap: 30px;">
-          <span style="display: inline-flex; align-items: center; gap: 13px; white-space: nowrap; background: #F2F0EA; color: #0C0B0A; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 450; letter-spacing: 0.07em; text-transform: uppercase; padding: 14px 22px;">
-            Send us your work
-            <svg width="15" height="11" viewBox="0 0 15 11" fill="none" aria-hidden="true"><path d="M0 5.5h12.8M9.3 1.8L13 5.5 9.3 9.2" stroke="#0C0B0A" stroke-width="1.6" stroke-linecap="square"/></svg>
-          </span>
-          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; white-space: nowrap; color: #F2F0EA; border-bottom: 1px solid rgba(242,240,234,0.34); padding-bottom: 4px;">Read the thesis</span>
-        </div>
+        <span class="lbl" style="color: #F2F0EA; border-bottom: 1px solid rgba(242,240,234,0.4); padding-bottom: 5px;">Read the thesis</span>
       </div>
+      <div></div>
+    </div>
 
-      <!-- rail closes on the right rule -->
-      <div style="text-align: right;">
-        <div style="padding-bottom: 13px; border-bottom: 1px solid rgba(242,240,234,0.085);">
-          <div class="lbl" style="color: #7C776E; margin-bottom: 8px;">Mandate</div>
-          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; line-height: 1.72;">Compute<br>Agent infrastructure<br>Agent applications</div>
-        </div>
-        <div style="padding: 13px 0; border-bottom: 1px solid rgba(242,240,234,0.085);">
-          <div class="lbl" style="color: #7C776E; margin-bottom: 8px;">First look</div>
-          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; line-height: 1.72;">Researcher networks,<br>before rounds form</div>
-        </div>
-        <div style="padding: 13px 0; border-bottom: 1px solid rgba(242,240,234,0.085);">
-          <div class="lbl" style="color: #7C776E; margin-bottom: 8px;">Reach</div>
-          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; line-height: 1.72;">San Francisco<br>and Asia</div>
-        </div>
-        <div style="padding: 13px 0 0;">
-          <div class="lbl" style="color: #7C776E; margin-bottom: 8px;">Lineage</div>
-          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; line-height: 1.72;">IOSG Ventures,<br>since 2017</div>
-        </div>
-      </div>
+    <!-- the hero resolves on a full-measure fact band -->
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 44px; padding: 22px 0 26px; border-top: 1px solid rgba(242,240,234,0.16); border-bottom: 1px solid rgba(242,240,234,0.16);">
+      <div><div class="lbl" style="color: #9A948A; margin-bottom: 10px;">Mandate</div><div class="mono">Compute to applications</div></div>
+      <div><div class="lbl" style="color: #9A948A; margin-bottom: 10px;">First look</div><div class="mono">Researcher networks</div></div>
+      <div><div class="lbl" style="color: #9A948A; margin-bottom: 10px;">Reach</div><div class="mono">San Francisco and Asia</div></div>
+      <div><div class="lbl" style="color: #9A948A; margin-bottom: 10px;">Lineage</div><div class="mono">IOSG Ventures, 2017</div></div>
     </div>
   </div>
 
 </div>
 
 <!-- ═══════ 01 · the ledger ═══════ -->
-<div style="background: #F1EFE8; color: #0C0B0A;">
+<div style="background: #F1EFE8; color: #0C0B0A; margin-top: 92px;">
   <div style="max-width: 1160px; margin: 0 auto; padding: 0 68px;">
 
-    <!-- the quiet moment -->
-    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 44px; align-items: baseline; padding: 108px 0 96px;">
-      <div class="lbl" style="color: rgba(12,11,10,0.5);">01</div>
+    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 44px; align-items: baseline; padding: 104px 0 92px;">
+      <div class="lbl" style="color: rgba(12,11,10,0.68);">01</div>
       <div>
-        <div class="lbl" style="color: rgba(12,11,10,0.5); margin-bottom: 34px;">The screen</div>
-        <h2 class="disp" style="font-size: 56px; line-height: 1.1; letter-spacing: -0.02em; margin: 0;">
-          Which line of the customer’s P&amp;L<br>does this revenue replace?
+        <div class="kick" style="color: rgba(12,11,10,0.68); margin-bottom: 32px;">The screen</div>
+        <h2 class="disp" style="font-size: 58px; line-height: 1.08; letter-spacing: -0.02em; margin: 0;">
+          Which line of the customer’s<br>P&amp;L does this revenue replace?
         </h2>
       </div>
     </div>
 
-    <!-- the dense passage: three cost lines, struck by the layer that removes them -->
-    <div style="padding-bottom: 104px;">
-      <div class="row" style="padding-bottom: 15px; border-bottom: 1px solid rgba(12,11,10,0.20);">
-        <div class="lbl" style="color: rgba(12,11,10,0.5);">Layer</div>
-        <div class="lbl" style="color: rgba(12,11,10,0.5);">The customer’s cost line</div>
-        <div class="lbl" style="color: rgba(12,11,10,0.5);">What strikes it out</div>
+    <div style="padding-bottom: 100px;">
+      <div class="row" style="padding-bottom: 14px; border-bottom: 2px solid rgba(12,11,10,0.32);">
+        <div class="lbl" style="color: rgba(12,11,10,0.68);">Layer</div>
+        <div class="lbl" style="color: rgba(12,11,10,0.68);">The customer’s cost line</div>
+        <div class="lbl" style="color: rgba(12,11,10,0.68);">What strikes it out</div>
       </div>
 
-      <div class="row" style="padding: 34px 0 32px; border-bottom: 1px solid rgba(12,11,10,0.11);">
-        <div class="lbl" style="color: rgba(12,11,10,0.62);">01</div>
+      <div class="row" style="padding: 36px 0 34px; border-bottom: 1px solid rgba(12,11,10,0.13);">
+        <div class="lbl" style="color: rgba(12,11,10,0.68);">01</div>
         <div class="disp" style="font-size: 38px; line-height: 1; letter-spacing: -0.014em;">
-          <span style="position: relative; display: inline-block; line-height: 1; white-space: nowrap;">Cloud &amp; compute spend<span style="position: absolute; left: -3px; right: -3px; top: 53%; height: 2px; transform: translateY(-50%); background: rgba(12,11,10,0.5);"></span></span>
+          <span class="strike">Cloud &amp; compute spend<i style="background: rgba(12,11,10,0.6);"></i></span>
         </div>
-        <div style="font-size: 13.5px; line-height: 1.68; color: rgba(12,11,10,0.72);">
+        <div style="font-size: 13.5px; line-height: 1.68; color: rgba(12,11,10,0.74);">
           <span style="color: #0C0B0A;">Compute.</span> Inference optimization, GPU marketplaces, confidential inference. Cut serving cost 10x and you re-price every application above you.
         </div>
       </div>
 
-      <div class="row" style="padding: 34px 0 32px; border-bottom: 1px solid rgba(12,11,10,0.11);">
-        <div class="lbl" style="color: rgba(12,11,10,0.62);">02</div>
+      <div class="row" style="padding: 36px 0 34px; border-bottom: 1px solid rgba(12,11,10,0.13);">
+        <div class="lbl" style="color: rgba(12,11,10,0.68);">02</div>
         <div class="disp" style="font-size: 38px; line-height: 1; letter-spacing: -0.014em;">
-          <span style="position: relative; display: inline-block; line-height: 1; white-space: nowrap;">Tooling &amp; licences<span style="position: absolute; left: -3px; right: -3px; top: 53%; height: 4px; transform: translateY(-50%); background: rgba(12,11,10,0.78);"></span></span>
+          <span class="strike">Tooling &amp; licences<i style="background: rgba(12,11,10,0.6);"></i></span>
         </div>
-        <div style="font-size: 13.5px; line-height: 1.68; color: rgba(12,11,10,0.72);">
+        <div style="font-size: 13.5px; line-height: 1.68; color: rgba(12,11,10,0.74);">
           <span style="color: #0C0B0A;">Agent infrastructure.</span> Sandboxes, runtimes, tool governance, evaluation environments. The layer that sets how fast an agent team can move.
         </div>
       </div>
 
-      <div class="row" style="padding: 34px 0 32px; border-bottom: 1px solid rgba(12,11,10,0.20);">
-        <div class="lbl" style="color: #C8341A;">03</div>
+      <div class="row" style="padding: 36px 0 34px; border-bottom: 2px solid rgba(12,11,10,0.32);">
+        <div class="lbl" style="color: #B02D14;">03</div>
         <div class="disp" style="font-size: 38px; line-height: 1; letter-spacing: -0.014em;">
-          <span style="position: relative; display: inline-block; line-height: 1; white-space: nowrap;">Outsourced operations<span style="position: absolute; left: -5px; right: -5px; top: 53%; height: 9px; transform: translateY(-50%); background: #C8341A;"></span></span>
+          <span class="strike">Outsourced operations<i style="background: #B02D14;"></i></span>
         </div>
-        <div style="font-size: 13.5px; line-height: 1.68; color: rgba(12,11,10,0.72);">
+        <div style="font-size: 13.5px; line-height: 1.68; color: rgba(12,11,10,0.74);">
           <span style="color: #0C0B0A;">Agent applications.</span> Vertical agents replacing outsourced work. A demo doesn’t clear our bar. A replaced budget line does.
         </div>
       </div>
 
-      <div class="row" style="padding-top: 40px;">
-        <div class="lbl" style="color: rgba(12,11,10,0.5);">Then</div>
-        <div style="font-size: 13.5px; line-height: 1.68; color: rgba(12,11,10,0.72);"><span style="color: #0C0B0A;">Efficiency density.</span> The cost a layer removes for everyone above it.</div>
-        <div style="font-size: 13.5px; line-height: 1.68; color: rgba(12,11,10,0.72);"><span style="color: #0C0B0A;">Talent density.</span> How many of the people who wrote the defining papers are in the room.</div>
+      <div class="row" style="padding-top: 34px;">
+        <div></div>
+        <div style="font-size: 13.5px; line-height: 1.68; color: rgba(12,11,10,0.74);"><span style="color: #0C0B0A;">Efficiency density.</span> The cost a layer removes for everyone above it.</div>
+        <div style="font-size: 13.5px; line-height: 1.68; color: rgba(12,11,10,0.74);"><span style="color: #0C0B0A;">Talent density.</span> How many of the people who wrote the defining papers are in the room.</div>
       </div>
     </div>
 
@@ -153,103 +141,99 @@
 
 <div style="max-width: 1160px; margin: 0 auto; padding: 0 68px;">
 
-  <!-- ═══════ 02 portfolio — the dense register ═══════ -->
-  <div style="padding: 96px 0 48px;">
-    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 44px; align-items: baseline; margin-bottom: 54px;">
-      <div class="lbl" style="color: #7C776E;">02</div>
-      <div style="display: flex; align-items: baseline; justify-content: space-between;">
-        <h2 class="disp" style="font-size: 38px; letter-spacing: -0.017em; margin: 0;">Already live</h2>
-        <span class="lbl" style="color: #7C776E;">5 of 150+ since 2017</span>
+  <!-- ═══════ 02 portfolio — grouped, so layer is stated once ═══════ -->
+  <div style="padding: 96px 0 92px;">
+    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 44px; align-items: baseline; margin-bottom: 50px;">
+      <div class="lbl" style="color: #9A948A;">02</div>
+      <div>
+        <div class="kick" style="color: #9A948A; margin-bottom: 22px;">Portfolio</div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between;">
+          <h2 class="disp" style="font-size: 40px; letter-spacing: -0.017em; margin: 0;">Already live</h2>
+          <span class="lbl" style="color: #9A948A;">5 of 150+ since 2017</span>
+        </div>
       </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 44px; align-items: baseline; padding-bottom: 13px; border-bottom: 1px solid rgba(242,240,234,0.16);">
-      <div class="lbl" style="color: #7C776E;">Layer</div>
-      <div style="display: flex; align-items: baseline; gap: 32px;">
-        <span class="lbl" style="color: #7C776E; flex: 0 0 236px;">Company</span>
-        <span class="lbl" style="color: #7C776E; flex: 1 1 auto;">What it is</span>
-        <span class="lbl" style="color: #7C776E; flex: 0 0 auto;">Stack</span>
-      </div>
+    <div class="trow" style="padding-bottom: 14px; border-bottom: 2px solid rgba(242,240,234,0.3);">
+      <div class="lbl" style="color: #9A948A;">Layer</div>
+      <div class="lbl" style="color: #9A948A;">Company</div>
+      <div class="lbl" style="color: #9A948A;">What it is</div>
     </div>
-    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 44px; align-items: baseline; padding: 19px 0 17px; border-bottom: 1px solid rgba(242,240,234,0.085);">
-      <div class="lbl" style="color: #7C776E;">01</div>
-      <div style="display: flex; align-items: baseline; gap: 32px;">
-        <span class="disp" style="font-size: 22px; letter-spacing: -0.012em; flex: 0 0 236px;">Hyperbolic</span>
-        <span style="font-size: 13.5px; color: #A6A29A; flex: 1 1 auto;">Open GPU marketplace</span>
-        <span class="lbl" style="color: #7C776E; white-space: nowrap; flex: 0 0 auto;">Compute</span>
-      </div>
+
+    <div class="trow" style="padding: 26px 0 12px;">
+      <div class="lbl" style="color: #9A948A;">01</div>
+      <div class="lbl" style="color: #F2F0EA;">Compute</div>
+      <div></div>
     </div>
-    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 44px; align-items: baseline; padding: 19px 0 17px; border-bottom: 1px solid rgba(242,240,234,0.085);">
-      <div class="lbl" style="color: #7C776E;">01</div>
-      <div style="display: flex; align-items: baseline; gap: 32px;">
-        <span class="disp" style="font-size: 22px; letter-spacing: -0.012em; flex: 0 0 236px;">Phala</span>
-        <span style="font-size: 13.5px; color: #A6A29A; flex: 1 1 auto;">Confidential AI inference</span>
-        <span class="lbl" style="color: #7C776E; white-space: nowrap; flex: 0 0 auto;">Compute</span>
-      </div>
+    <div class="trow" style="padding: 15px 0 13px; border-top: 1px solid rgba(242,240,234,0.09);">
+      <div></div><div class="disp" style="font-size: 22px; letter-spacing: -0.012em;">Hyperbolic</div>
+      <div style="font-size: 13.5px; color: #B4AEA4;">Open GPU marketplace</div>
     </div>
-    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 44px; align-items: baseline; padding: 19px 0 17px; border-bottom: 1px solid rgba(242,240,234,0.085);">
-      <div class="lbl" style="color: #7C776E;">01</div>
-      <div style="display: flex; align-items: baseline; gap: 32px;">
-        <span class="disp" style="font-size: 22px; letter-spacing: -0.012em; flex: 0 0 236px;">Moonmath</span>
-        <span style="font-size: 13.5px; color: #A6A29A; flex: 1 1 auto;">GPU kernels and compression for world models</span>
-        <span class="lbl" style="color: #7C776E; white-space: nowrap; flex: 0 0 auto;">Compute</span>
-      </div>
+    <div class="trow" style="padding: 15px 0 13px; border-top: 1px solid rgba(242,240,234,0.09);">
+      <div></div><div class="disp" style="font-size: 22px; letter-spacing: -0.012em;">Phala</div>
+      <div style="font-size: 13.5px; color: #B4AEA4;">Confidential AI inference</div>
     </div>
-    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 44px; align-items: baseline; padding: 19px 0 17px; border-bottom: 1px solid rgba(242,240,234,0.085);">
-      <div class="lbl" style="color: #7C776E;">02</div>
-      <div style="display: flex; align-items: baseline; gap: 32px;">
-        <span class="disp" style="font-size: 22px; letter-spacing: -0.012em; flex: 0 0 236px;">SmolMachine</span>
-        <span style="font-size: 13.5px; color: #A6A29A; flex: 1 1 auto;">Agent-native microVM sandbox</span>
-        <span class="lbl" style="color: #7C776E; white-space: nowrap; flex: 0 0 auto;">Agent infra</span>
-      </div>
+    <div class="trow" style="padding: 15px 0 13px; border-top: 1px solid rgba(242,240,234,0.09);">
+      <div></div><div class="disp" style="font-size: 22px; letter-spacing: -0.012em;">Moonmath</div>
+      <div style="font-size: 13.5px; color: #B4AEA4;">GPU kernels and compression for world models</div>
     </div>
-    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 44px; align-items: baseline; padding: 19px 0 17px; border-bottom: 1px solid rgba(242,240,234,0.085);">
-      <div class="lbl" style="color: #7C776E;">02</div>
-      <div style="display: flex; align-items: baseline; gap: 32px;">
-        <span class="disp" style="font-size: 22px; letter-spacing: -0.012em; flex: 0 0 236px;">MintMCP</span>
-        <span style="font-size: 13.5px; color: #A6A29A; flex: 1 1 auto;">Enterprise MCP gateway</span>
-        <span class="lbl" style="color: #7C776E; white-space: nowrap; flex: 0 0 auto;">Agent infra</span>
-      </div>
+
+    <div class="trow" style="padding: 26px 0 12px;">
+      <div class="lbl" style="color: #9A948A;">02</div>
+      <div class="lbl" style="color: #F2F0EA;">Agent infrastructure</div>
+      <div></div>
     </div>
-    <!-- the empty slot is not a company: no serif name, dashed rule, outlined tag -->
-    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 44px; align-items: baseline; padding: 19px 0 17px; border-bottom: 1px solid rgba(242,240,234,0.16);">
-      <div class="lbl" style="color: #C8341A;">03</div>
-      <div style="display: flex; align-items: baseline; gap: 32px;">
-        <span class="lbl" style="color: #C8341A; flex: 0 0 236px;">Slot open</span>
-        <span style="font-size: 13.5px; color: #F2F0EA; flex: 1 1 auto;">Layer 03 is where we are writing first cheques now</span>
-        <span class="lbl" style="color: #C8341A; white-space: nowrap; flex: 0 0 auto; border: 1px solid rgba(200,52,26,0.55); padding: 3px 8px;">Agent apps</span>
-      </div>
+    <div class="trow" style="padding: 15px 0 13px; border-top: 1px solid rgba(242,240,234,0.09);">
+      <div></div><div class="disp" style="font-size: 22px; letter-spacing: -0.012em;">SmolMachine</div>
+      <div style="font-size: 13.5px; color: #B4AEA4;">Agent-native microVM sandbox</div>
+    </div>
+    <div class="trow" style="padding: 15px 0 13px; border-top: 1px solid rgba(242,240,234,0.09);">
+      <div></div><div class="disp" style="font-size: 22px; letter-spacing: -0.012em;">MintMCP</div>
+      <div style="font-size: 13.5px; color: #B4AEA4;">Enterprise MCP gateway</div>
+    </div>
+
+    <div class="trow" style="padding: 26px 0 12px;">
+      <div class="lbl" style="color: #E0603F;">03</div>
+      <div class="lbl" style="color: #E0603F;">Agent applications</div>
+      <div></div>
+    </div>
+    <div class="trow" style="padding: 15px 0 13px; border-top: 1px solid rgba(242,240,234,0.09); border-bottom: 2px solid rgba(242,240,234,0.3);">
+      <div></div><div class="disp" style="font-size: 22px; letter-spacing: -0.012em; color: #E0603F;">Slot open</div>
+      <div style="font-size: 13.5px; color: #E0603F;">This is where we are writing first cheques now</div>
     </div>
   </div>
 
-  <!-- ═══════ 03 founders ═══════ -->
+  <!-- ═══════ 03 the ask ═══════ -->
   <div style="padding: 96px 0 100px;">
-    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 44px; align-items: baseline; margin-bottom: 44px;">
-      <div class="lbl" style="color: #7C776E;">03</div>
-      <h2 class="disp" style="font-size: 38px; line-height: 1.14; letter-spacing: -0.017em; margin: 0;">Tell us the line you strike out.<br>We answer within a week.</h2>
+    <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 44px; align-items: baseline; margin-bottom: 46px;">
+      <div class="lbl" style="color: #9A948A;">03</div>
+      <div>
+        <div class="kick" style="color: #9A948A; margin-bottom: 30px;">For founders</div>
+        <h2 class="disp" style="font-size: 58px; line-height: 1.08; letter-spacing: -0.02em; margin: 0;">Tell us the line you strike out.<br>We answer within a week.</h2>
+      </div>
     </div>
     <div class="row">
       <div></div>
       <div>
-        <p style="font-size: 15px; line-height: 1.62; color: #A6A29A; margin: 0 0 40px;">
+        <p style="font-size: 15.5px; line-height: 1.64; color: #B4AEA4; margin: 0 0 40px;">
           No warm intro required. Cheaper compute across the portfolio, customer intros for enterprise sales, and a Shenzhen supply chain if you build hardware.
         </p>
-        <span style="display: inline-flex; align-items: center; gap: 17px; background: #F2F0EA; color: #0C0B0A; font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 450; letter-spacing: 0.05em; text-transform: uppercase; padding: 20px 30px;">
+        <span style="display: inline-flex; align-items: center; gap: 17px; background: #F2F0EA; color: #0C0B0A; font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 450; letter-spacing: 0.06em; text-transform: uppercase; padding: 19px 28px;">
           Send us one paragraph
-          <svg width="19" height="13" viewBox="0 0 19 13" fill="none" aria-hidden="true"><path d="M0 6.5h16.4M12.4 2.4L16.7 6.5 12.4 10.6" stroke="#0C0B0A" stroke-width="1.8" stroke-linecap="square"/></svg>
+          <svg width="18" height="12" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M0 6h15.4M11.6 2.1L15.7 6 11.6 9.9" stroke="#0C0B0A" stroke-width="1.7" stroke-linecap="square"/></svg>
         </span>
       </div>
-      <div style="text-align: right;">
-        <div class="lbl" style="color: #7C776E; margin-bottom: 8px;">Or write to us</div>
-        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; line-height: 1.72;"><a href="#">frontier@iosg.vc</a></div>
+      <div>
+        <div class="lbl" style="color: #9A948A; margin-bottom: 10px;">Or write to us</div>
+        <div class="mono"><a href="#" style="border-bottom-color: rgba(242,240,234,0.4);">frontier@iosg.vc</a></div>
       </div>
     </div>
   </div>
 
   <!-- ═══════ footer ═══════ -->
   <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 24px 0 44px; border-top: 1px solid rgba(242,240,234,0.16);">
-    <span class="lbl" style="color: #7C776E;">IOSF, a fund by IOSG Ventures</span>
-    <span class="lbl" style="color: #7C776E;">Frontier 2026</span>
+    <span class="lbl" style="color: #9A948A;">© 2026 IOSG Ventures</span>
+    <span class="lbl" style="color: #9A948A;">This page is not an offer to sell securities</span>
   </div>
 
 </div>
