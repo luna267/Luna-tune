@@ -1,17 +1,84 @@
 {
   "artboards": [
-    { "file": "Main.dc.html",              "x": 0,    "y": 0, "w": 1160, "h": 2240, "title": "A - Frontier Instrument" },
-    { "file": "MachineVision.dc.html",     "x": 1280, "y": 0, "w": 1160, "h": 2240, "title": "B - Machine Vision" },
-    { "file": "PaperContrarian.dc.html",   "x": 2560, "y": 0, "w": 1160, "h": 2240, "title": "C - Paper Contrarian" },
-    { "file": "LatentCartography.dc.html", "x": 3840, "y": 0, "w": 1160, "h": 2240, "title": "D - Latent Cartography" },
-    { "file": "ComputeMaterial.dc.html",   "x": 5120, "y": 0, "w": 1160, "h": 2240, "title": "E - Compute as Material" }
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1160,
+      "h": 3480,
+      "title": "A - Frontier Instrument"
+    },
+    {
+      "file": "MachineVision.dc.html",
+      "x": 1280,
+      "y": 0,
+      "w": 1160,
+      "h": 2240,
+      "title": "B - Machine Vision"
+    },
+    {
+      "file": "PaperContrarian.dc.html",
+      "x": 2560,
+      "y": 0,
+      "w": 1160,
+      "h": 2240,
+      "title": "C - Paper Contrarian"
+    },
+    {
+      "file": "LatentCartography.dc.html",
+      "x": 3840,
+      "y": 0,
+      "w": 1160,
+      "h": 2240,
+      "title": "D - Latent Cartography"
+    },
+    {
+      "file": "ComputeMaterial.dc.html",
+      "x": 5120,
+      "y": 0,
+      "w": 1160,
+      "h": 2240,
+      "title": "E - Compute as Material"
+    }
   ],
   "annotations": [
-    { "id": "note-a", "x": 0, "y": -330, "w": 400, "text": "A - FRONTIER INSTRUMENT\nInstrument Serif + IBM Plex Mono. Near-black, one acid accent. The stack drawn as a diagram, cost flowing upward.\n+ Institutional and technical at once. Closest to a fund founders take seriously on first look.\n- Editorial serif on near-black is the most-copied AI-fund look right now; the accent carries all the differentiation." },
-    { "id": "note-b", "x": 1280, "y": -330, "w": 400, "text": "B - MACHINE VISION\nPhosphor CRT, all-mono, headline visibly split into tokens, dither texture, terminal syntax as navigation.\n+ Unmistakable to researchers - signals we live in the same tools they do. Nobody else in VC looks like this.\n- Highest risk of aging fast, and it fights long Chinese copy: 中文 in mono at 12px is genuinely hard to read." },
-    { "id": "note-c", "x": 2560, "y": -330, "w": 400, "text": "C - PAPER CONTRARIAN\nPure white, no dark mode, 118px Archivo Black against 10px mono, visible ruled grid, one red.\n+ The boldest move available when every AI brand is dark and glowing. Prints and screenshots beautifully.\n- Reads more design studio than fund; the huge type leaves little room for the dense content you actually have." },
-    { "id": "note-d", "x": 3840, "y": -330, "w": 400, "text": "D - LATENT CARTOGRAPHY\nThe brand is a coordinate system. Space Grotesk + DM Mono, cool paper, indigo and the IOSG magenta. Thesis and portfolio are both plotted, not listed.\n+ Most extensible: every new company, thesis and event gets a position. Keeps visual continuity with IOSG.\n- Charts need real maintenance, and a wrongly-placed dot is an argument with a founder." },
-    { "id": "note-e", "x": 5120, "y": -330, "w": 400, "text": "E - COMPUTE AS MATERIAL\nGraphite and steel, thermal amber, Barlow Condensed. The three layers are rack units; portfolio companies are dies on a wafer.\n+ Physical and heavy - the opposite of AI abstraction. Strong for the compute layer and hardware mandate.\n- The metaphor is bottom-of-stack; it undersells Layer 3, and condensed caps get shouty at length." }
+    {
+      "id": "note-a",
+      "x": 0,
+      "y": -330,
+      "w": 400,
+      "text": "A - FRONTIER INSTRUMENT\nInstrument Serif + IBM Plex Mono. Near-black, one acid accent. The stack drawn as a diagram, cost flowing upward.\n+ Institutional and technical at once. Closest to a fund founders take seriously on first look.\n- Editorial serif on near-black is the most-copied AI-fund look right now; the accent carries all the differentiation."
+    },
+    {
+      "id": "note-b",
+      "x": 1280,
+      "y": -330,
+      "w": 400,
+      "text": "B - MACHINE VISION\nPhosphor CRT, all-mono, headline visibly split into tokens, dither texture, terminal syntax as navigation.\n+ Unmistakable to researchers - signals we live in the same tools they do. Nobody else in VC looks like this.\n- Highest risk of aging fast, and it fights long Chinese copy: 中文 in mono at 12px is genuinely hard to read."
+    },
+    {
+      "id": "note-c",
+      "x": 2560,
+      "y": -330,
+      "w": 400,
+      "text": "C - PAPER CONTRARIAN\nPure white, no dark mode, 118px Archivo Black against 10px mono, visible ruled grid, one red.\n+ The boldest move available when every AI brand is dark and glowing. Prints and screenshots beautifully.\n- Reads more design studio than fund; the huge type leaves little room for the dense content you actually have."
+    },
+    {
+      "id": "note-d",
+      "x": 3840,
+      "y": -330,
+      "w": 400,
+      "text": "D - LATENT CARTOGRAPHY\nThe brand is a coordinate system. Space Grotesk + DM Mono, cool paper, indigo and the IOSG magenta. Thesis and portfolio are both plotted, not listed.\n+ Most extensible: every new company, thesis and event gets a position. Keeps visual continuity with IOSG.\n- Charts need real maintenance, and a wrongly-placed dot is an argument with a founder."
+    },
+    {
+      "id": "note-e",
+      "x": 5120,
+      "y": -330,
+      "w": 400,
+      "text": "E - COMPUTE AS MATERIAL\nGraphite and steel, thermal amber, Barlow Condensed. The three layers are rack units; portfolio companies are dies on a wafer.\n+ Physical and heavy - the opposite of AI abstraction. Strong for the compute layer and hardware mandate.\n- The metaphor is bottom-of-stack; it undersells Layer 3, and condensed caps get shouty at length."
+    }
   ],
-  "launch": { "view": "canvas" }
+  "launch": {
+    "view": "canvas"
+  }
 }
