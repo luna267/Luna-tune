@@ -11,210 +11,203 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400&amp;text=%E4%B8%AD%E6%96%87&amp;display=swap">
   <style>
     body { margin: 0; background: #0C0B0A; color: #F2F0EA;
-      font-family: "Newsreader", Georgia, serif; font-variation-settings: "opsz" 16;
+      font-family: "Newsreader", Georgia, serif; font-variation-settings: "opsz" 14;
       font-variant-numeric: oldstyle-nums; -webkit-font-smoothing: antialiased; }
-    a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+    a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 
-    /* one grid: 8 columns, 32px gutters, 1024 measure */
-    .g { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 32px; align-items: baseline; }
+    .g { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 32px; }
+    .top { align-items: start; }   /* cap-tops align, so rail numerals do not sink */
+    .base { align-items: baseline; }
     .c1 { grid-column: 1 / 2; } .c2_8 { grid-column: 2 / 9; }
     .c2_5 { grid-column: 2 / 6; } .c6_8 { grid-column: 6 / 9; }
-
-    /* ONE rule value; difference carried by tint only */
-    .bd  { border-top: 1px solid rgba(242,240,234,0.26); }
     .hr  { border-top: 1px solid rgba(242,240,234,0.11); }
-    .bdk { border-top: 1px solid rgba(12,11,10,0.30); }
+    .bd  { border-top: 1px solid rgba(242,240,234,0.26); }
     .hrk { border-top: 1px solid rgba(12,11,10,0.12); }
+    .bdk { border-top: 1px solid rgba(12,11,10,0.30); }
 
-    /* ramp, each tier with its own optical size; one display leading */
-    .d100{ font-variation-settings: "opsz" 72; font-size: 100px; line-height: 1.06; letter-spacing: -0.021em; font-variant-numeric: lining-nums; margin: 0; font-weight: 400; }
-    .d88 { font-variation-settings: "opsz" 72; font-size: 88px; line-height: 1.06; letter-spacing: -0.014em; }
-    .d60 { font-variation-settings: "opsz" 60; font-size: 60px; line-height: 1.06; letter-spacing: -0.016em; font-variant-numeric: lining-nums; margin: 0; font-weight: 400; }
+    /* ramp with a speaking voice in the middle: 100 / 64 / 44 / 20 / 14 / 11 */
+    .d100{ font-variation-settings: "opsz" 72; font-size: 100px; line-height: 1.05; letter-spacing: -0.022em; font-variant-numeric: lining-nums; margin: 0; font-weight: 400; }
+    .d64 { font-variation-settings: "opsz" 60; font-size: 64px; line-height: 1.05; letter-spacing: -0.015em; }
+    .d44 { font-variation-settings: "opsz" 44; font-size: 44px; line-height: 1.12; letter-spacing: -0.013em; font-variant-numeric: lining-nums; margin: 0; font-weight: 400; }
     .d20 { font-variation-settings: "opsz" 20; font-size: 20px; letter-spacing: -0.004em; }
-    .lead{ font-size: 16px; line-height: 1.62; margin: 0; }
-    .note{ font-size: 13.5px; line-height: 1.68; }
-    /* two label idioms only: tracked caps, and tabular figures. no italic eyebrows. */
+    .lead{ font-size: 17px; line-height: 1.6; margin: 0; }
+    .note{ font-size: 14px; line-height: 1.62; }
     .lbl { font-family: "Archivo", "Helvetica Neue", sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
     .ra  { text-align: right; margin-right: -0.15em; }
 
-    /* the set piece: word at full value, the cancelling rule at the same value and a third the weight */
+    /* the cancel-mark: deliberate weight, above x-height centre, 0.1em overshoot both ends */
     .st { position: relative; display: inline-block; line-height: 1; white-space: nowrap; }
-    .st i { position: absolute; left: 0; right: -0.05em; top: 47.5%; height: 2px; transform: translateY(-50%); }
-    /* hand-kerned italic capitals in the hero */
-    .it { font-style: italic; font-size: 1.02em; }
+    .st i { position: absolute; left: -0.1em; right: -0.1em; top: 44%; height: 4px; transform: translateY(-50%); }
+    /* the concept letters must be the ones you notice, not the faintest */
+    .it { font-style: italic; font-weight: 500; font-size: 1.05em; }
   </style>
 </helmet>
 
 <div style="max-width: 1160px; margin: 0 auto; padding: 0 68px;">
 
-  <!-- ═══════ nav ═══════ -->
   <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 30px 0 24px;">
-    <div style="display: flex; align-items: baseline; gap: 22px;">
-      <span style="font-variation-settings: 'opsz' 32; font-size: 30px; font-weight: 500;"><span style="letter-spacing: 0.045em;">I</span><span style="letter-spacing: 0.052em;">O</span><span style="letter-spacing: 0.036em;">S</span><span>F</span></span>
+    <div style="display: flex; align-items: baseline; gap: 20px;">
+      <span style="font-variation-settings: 'opsz' 32; font-size: 30px; font-weight: 500;"><span style="letter-spacing: 0.042em;">I</span><span style="letter-spacing: 0.048em;">O</span><span style="letter-spacing: 0.014em;">S</span><span>F</span></span>
       <span class="lbl" style="color: #8C867C;">A fund by IOSG Ventures</span>
     </div>
     <div style="display: flex; align-items: baseline; gap: 30px;">
       <span class="lbl" style="color: #C0B9AE;">Thesis</span><span class="lbl" style="color: #C0B9AE;">Portfolio</span><span class="lbl" style="color: #C0B9AE;">For founders</span>
-      <span class="lbl" style="display: inline-flex; align-items: baseline; gap: 8px; padding-left: 20px;">
-        <span style="color: #F2F0EA;">EN</span>
-        <span style="color: rgba(242,240,234,0.3);">·</span>
-        <span style="font-family: 'Noto Sans SC', 'PingFang SC', sans-serif; font-size: 10px; letter-spacing: 0.02em; color: #8C867C;">中文</span>
+      <span style="display: inline-flex; align-items: baseline; gap: 9px; padding-left: 18px; border-left: 1px solid rgba(242,240,234,0.18);">
+        <span class="lbl" style="color: #F2F0EA;">EN</span>
+        <span style="font-family: 'Noto Sans SC', 'PingFang SC', sans-serif; font-size: 10px; letter-spacing: 0; color: #8C867C;">中文</span>
       </span>
     </div>
   </div>
 
-  <!-- ═══════ hero — opens on the line itself, no numeral, no eyebrow ═══════ -->
-  <div class="bd" style="padding: 88px 0 0;">
-    <h1 class="d100" style="margin-bottom: 54px;">The <span class="it" style="margin: 0 0.055em 0 0.012em;">G</span> was Genesis.<br>The <span class="it" style="margin: 0 0.05em 0 0.02em;">F</span> is Frontier.</h1>
-    <div class="g" style="margin-bottom: 54px;">
+  <div class="bd" style="padding: 84px 0 0;">
+    <h1 class="d100" style="margin-bottom: 48px;">The <span class="it" style="margin: 0 0.05em 0 0.012em;">G</span> was Genesis.<br>The <span class="it" style="margin: 0 0.045em 0 0.02em;">F</span> is Frontier.</h1>
+    <div class="g base" style="margin-bottom: 48px;">
       <div class="c2_5">
-        <p class="lead" style="color: #C0B9AE; margin-bottom: 24px;">In 2017 we backed open, programmable systems at their beginning. Intelligence is the new open system. Same team, same discipline.</p>
+        <p class="lead" style="color: #D6D0C6; margin-bottom: 22px;">In 2017 we backed open, programmable systems at their beginning. Intelligence is the new open system. Same team, same discipline.</p>
         <span class="lbl" style="color: #F2F0EA;"><a href="#">Read the thesis</a></span>
       </div>
     </div>
     <div class="g hr" style="padding: 20px 0 0;">
-      <div style="grid-column: 1 / 4;"><div class="lbl" style="color: #8C867C; margin-bottom: 10px;">Mandate</div><div class="lead">Compute · Agent infrastructure · Agent applications</div></div>
-      <div style="grid-column: 4 / 7;"><div class="lbl" style="color: #8C867C; margin-bottom: 10px;">First look</div><div class="lead">Researcher networks, before rounds form</div></div>
-      <div style="grid-column: 7 / 9;"><div class="lbl" style="color: #8C867C; margin-bottom: 10px;">Reach</div><div class="lead">San Francisco and Asia</div></div>
+      <div style="grid-column: 1 / 4;"><div class="lbl" style="color: #8C867C; margin-bottom: 10px;">Mandate</div><div class="lead" style="color: #F2F0EA;">Compute, agent infrastructure, agent applications</div></div>
+      <div style="grid-column: 4 / 7;"><div class="lbl" style="color: #8C867C; margin-bottom: 10px;">First look</div><div class="lead" style="color: #F2F0EA;">Researcher networks, before rounds form</div></div>
+      <div style="grid-column: 7 / 9;"><div class="lbl" style="color: #8C867C; margin-bottom: 10px;">Reach</div><div class="lead" style="color: #F2F0EA;">San Francisco and Asia</div></div>
     </div>
   </div>
 
 </div>
 
-<!-- ═══════ cream ═══════ -->
-<div style="background: #F1EFE8; color: #0C0B0A; margin-top: 96px;">
+<div style="background: #F1EFE8; color: #0C0B0A; margin-top: 84px;">
   <div style="max-width: 1160px; margin: 0 auto; padding: 0 68px;">
 
-    <!-- 01 · the question -->
-    <div class="g" style="padding: 96px 0 80px;">
-      <div class="c1 lbl" style="color: rgba(12,11,10,0.62);">01</div>
-      <h2 class="c2_8 d60">Which line of the customer’s P&amp;L<br>does this revenue replace?</h2>
+    <!-- the question leads in; it does not compete with the stack it introduces -->
+    <div class="g top" style="padding: 80px 0 64px;">
+      <div class="c1 lbl" style="color: rgba(12,11,10,0.6);">01</div>
+      <p class="c2_8 d44" style="max-width: 20em;">Which line of the customer’s P&amp;L does this revenue replace?</p>
     </div>
 
-    <!-- THE SET PIECE: breaks the indent, breaks the scale, reverses the gutter -->
-    <div style="padding-bottom: 96px;">
-      <div style="margin-bottom: 44px;">
-        <div class="d88"><span class="st">Cloud &amp; compute spend<i style="background: #0C0B0A;"></i></span></div>
-        <div class="note ra" style="color: rgba(12,11,10,0.74); max-width: 560px; margin-left: auto; margin-top: 14px;"><span class="lbl" style="color: #0C0B0A;">Compute</span> — inference optimization, GPU marketplaces, confidential inference. Cut serving cost 10x and you re-price every application above you.</div>
+    <!-- the one display moment: out of the indent, out of the ramp, gutter reversed -->
+    <div style="padding-bottom: 76px;">
+      <div style="display: inline-block; margin-bottom: 40px;">
+        <div class="d64"><span class="st">Cloud &amp; compute spend<i style="background: #0C0B0A;"></i></span></div>
+        <div class="note ra" style="color: rgba(12,11,10,0.86); max-width: 470px; margin-left: auto; margin-top: 12px;"><span class="lbl" style="color: rgba(12,11,10,0.6);">Compute</span> — inference optimization, GPU marketplaces, confidential inference. Cut serving cost 10x and you re-price every application above you.</div>
       </div>
-      <div style="margin-bottom: 44px;">
-        <div class="d88"><span class="st">Tooling &amp; licences<i style="background: #0C0B0A;"></i></span></div>
-        <div class="note ra" style="color: rgba(12,11,10,0.74); max-width: 560px; margin-left: auto; margin-top: 14px;"><span class="lbl" style="color: #0C0B0A;">Agent infrastructure</span> — sandboxes, runtimes, tool governance, evaluation environments. The layer that sets how fast an agent team can move.</div>
+      <div style="display: block;"></div>
+      <div style="display: inline-block; margin-bottom: 40px;">
+        <div class="d64"><span class="st">Tooling &amp; licences<i style="background: #0C0B0A;"></i></span></div>
+        <div class="note ra" style="color: rgba(12,11,10,0.86); max-width: 470px; margin-left: auto; margin-top: 12px;"><span class="lbl" style="color: rgba(12,11,10,0.6);">Agent infrastructure</span> — sandboxes, runtimes, tool governance, evaluation environments. The layer that sets how fast an agent team can move.</div>
       </div>
-      <div>
-        <div class="d88"><span class="st">Outsourced operations<i style="background: #C62D0E;"></i></span></div>
-        <div class="note ra" style="color: rgba(12,11,10,0.74); max-width: 560px; margin-left: auto; margin-top: 14px;"><span class="lbl" style="color: #C62D0E;">Agent applications</span> — vertical agents replacing outsourced work. A demo doesn’t clear our bar. A replaced budget line does.</div>
+      <div style="display: block;"></div>
+      <div style="display: inline-block;">
+        <div class="d64"><span class="st">Outsourced operations<i style="background: #C62D0E;"></i></span></div>
+        <div class="note ra" style="color: rgba(12,11,10,0.86); max-width: 470px; margin-left: auto; margin-top: 12px;"><span class="lbl" style="color: #A32A12;">Agent applications</span> — vertical agents replacing outsourced work. A demo doesn’t clear our bar. A replaced budget line does.</div>
       </div>
     </div>
 
-    <div class="g hrk" style="padding: 26px 0 96px;">
-      <div class="c1 lbl" style="color: rgba(12,11,10,0.62);">And</div>
-      <div class="c2_5 note" style="color: rgba(12,11,10,0.74);"><span class="lbl" style="color: #0C0B0A;">Efficiency density</span> — the cost a layer removes for everyone above it.</div>
-      <div class="c6_8 note" style="color: rgba(12,11,10,0.74);"><span class="lbl" style="color: #0C0B0A;">Talent density</span> — how many of the people who wrote the defining papers are in the room.</div>
+    <div class="g hrk base" style="padding: 24px 0 80px;">
+      <div class="c1"></div>
+      <div class="c2_5 note" style="color: rgba(12,11,10,0.86);"><span class="lbl" style="color: rgba(12,11,10,0.6);">Efficiency density</span> — the cost a layer removes for everyone above it.</div>
+      <div class="c6_8 note" style="color: rgba(12,11,10,0.86);"><span class="lbl" style="color: rgba(12,11,10,0.6);">Talent density</span> — how many of the people who wrote the defining papers are in the room.</div>
     </div>
 
-    <!-- 02 · the proof -->
-    <div class="g bdk" style="padding: 96px 0 40px;">
-      <div class="c1 lbl" style="color: rgba(12,11,10,0.62);">02</div>
-      <div class="c2_5"><h2 class="d60">Already live</h2></div>
-      <div class="c6_8 lbl ra" style="color: rgba(12,11,10,0.62);">5 shown of 150+ · <a href="#" style="color: #0C0B0A;">See all</a></div>
+    <div class="g bdk top" style="padding: 80px 0 36px;">
+      <div class="c1 lbl" style="color: rgba(12,11,10,0.6);">02</div>
+      <div class="c2_5"><h2 class="d44">Already live</h2></div>
+      <div class="c6_8 lbl ra" style="color: rgba(12,11,10,0.6);"><a href="#" style="color: #0C0B0A;">See the full portfolio</a></div>
     </div>
 
     <div class="g">
       <div class="c1"></div>
-      <div class="c2_8 bdk" style="display: grid; grid-template-columns: 364px minmax(0, 1fr); gap: 32px; padding-bottom: 11px; border-top: none; border-bottom: 1px solid rgba(12,11,10,0.30);">
-        <div class="lbl" style="color: rgba(12,11,10,0.62);">Company</div>
-        <div class="lbl" style="color: rgba(12,11,10,0.62);">What it is</div>
+      <div class="c2_8" style="display: grid; grid-template-columns: 364px minmax(0, 1fr); gap: 32px; padding: 0 14px 11px; border-bottom: 1px solid rgba(12,11,10,0.30);">
+        <div class="lbl" style="color: rgba(12,11,10,0.6);">Company</div>
+        <div class="lbl" style="color: rgba(12,11,10,0.6);">What it is</div>
       </div>
     </div>
 
     <div class="g">
       <div class="c1"></div>
-      <div class="c2_8" style="border-top: 1px solid rgba(12,11,10,0.30); background: rgba(12,11,10,0.045); padding: 9px 14px; margin-top: 26px;">
+      <div class="c2_8" style="border-top: 1px solid rgba(12,11,10,0.30); background: rgba(12,11,10,0.05); padding: 9px 14px; margin-top: 24px;">
         <span class="lbl" style="color: #0C0B0A;">01 · Compute</span>
       </div>
     </div>
     <div class="g">
       <div class="c1"></div>
-      <div class="c2_8" style="display: grid; grid-template-columns: 364px minmax(0, 1fr); gap: 32px; align-items: baseline; border-top: 1px solid rgba(12,11,10,0.12); padding: 14px 14px 12px;">
+      <div class="c2_8" style="display: grid; grid-template-columns: 364px minmax(0, 1fr); gap: 32px; align-items: baseline; border-top: 1px solid rgba(12,11,10,0.12); padding: 13px 14px 11px;">
         <div class="d20">Hyperbolic</div>
-        <div class="note" style="color: rgba(12,11,10,0.74);">Open GPU marketplace</div>
+        <div class="note" style="color: rgba(12,11,10,0.86);">Open GPU marketplace</div>
       </div>
     </div>
     <div class="g">
       <div class="c1"></div>
-      <div class="c2_8" style="display: grid; grid-template-columns: 364px minmax(0, 1fr); gap: 32px; align-items: baseline; border-top: 1px solid rgba(12,11,10,0.12); padding: 14px 14px 12px;">
+      <div class="c2_8" style="display: grid; grid-template-columns: 364px minmax(0, 1fr); gap: 32px; align-items: baseline; border-top: 1px solid rgba(12,11,10,0.12); padding: 13px 14px 11px;">
         <div class="d20">Phala</div>
-        <div class="note" style="color: rgba(12,11,10,0.74);">Confidential AI inference</div>
+        <div class="note" style="color: rgba(12,11,10,0.86);">Confidential AI inference</div>
       </div>
     </div>
     <div class="g">
       <div class="c1"></div>
-      <div class="c2_8" style="display: grid; grid-template-columns: 364px minmax(0, 1fr); gap: 32px; align-items: baseline; border-top: 1px solid rgba(12,11,10,0.12); padding: 14px 14px 12px;">
+      <div class="c2_8" style="display: grid; grid-template-columns: 364px minmax(0, 1fr); gap: 32px; align-items: baseline; border-top: 1px solid rgba(12,11,10,0.12); padding: 13px 14px 11px;">
         <div class="d20">Moonmath</div>
-        <div class="note" style="color: rgba(12,11,10,0.74);">GPU kernels and compression for world models</div>
+        <div class="note" style="color: rgba(12,11,10,0.86);">GPU kernels and compression for world models</div>
       </div>
     </div>
     <div class="g">
       <div class="c1"></div>
-      <div class="c2_8" style="border-top: 1px solid rgba(12,11,10,0.30); background: rgba(12,11,10,0.045); padding: 9px 14px; margin-top: 26px;">
+      <div class="c2_8" style="border-top: 1px solid rgba(12,11,10,0.30); background: rgba(12,11,10,0.05); padding: 9px 14px; margin-top: 24px;">
         <span class="lbl" style="color: #0C0B0A;">02 · Agent infrastructure</span>
       </div>
     </div>
     <div class="g">
       <div class="c1"></div>
-      <div class="c2_8" style="display: grid; grid-template-columns: 364px minmax(0, 1fr); gap: 32px; align-items: baseline; border-top: 1px solid rgba(12,11,10,0.12); padding: 14px 14px 12px;">
+      <div class="c2_8" style="display: grid; grid-template-columns: 364px minmax(0, 1fr); gap: 32px; align-items: baseline; border-top: 1px solid rgba(12,11,10,0.12); padding: 13px 14px 11px;">
         <div class="d20">SmolMachine</div>
-        <div class="note" style="color: rgba(12,11,10,0.74);">Agent-native microVM sandbox</div>
+        <div class="note" style="color: rgba(12,11,10,0.86);">Agent-native microVM sandbox</div>
       </div>
     </div>
     <div class="g">
       <div class="c1"></div>
-      <div class="c2_8" style="display: grid; grid-template-columns: 364px minmax(0, 1fr); gap: 32px; align-items: baseline; border-top: 1px solid rgba(12,11,10,0.12); padding: 14px 14px 12px;">
+      <div class="c2_8" style="display: grid; grid-template-columns: 364px minmax(0, 1fr); gap: 32px; align-items: baseline; border-top: 1px solid rgba(12,11,10,0.12); padding: 13px 14px 11px;">
         <div class="d20">MintMCP</div>
-        <div class="note" style="color: rgba(12,11,10,0.74);">Enterprise MCP gateway</div>
+        <div class="note" style="color: rgba(12,11,10,0.86);">Enterprise MCP gateway</div>
       </div>
     </div>
     <div class="g">
       <div class="c1"></div>
-      <div class="c2_8" style="border-top: 1px solid rgba(12,11,10,0.30); background: rgba(12,11,10,0.045); padding: 9px 14px; margin-top: 26px;">
-        <span class="lbl" style="color: #C62D0E;">03 · Agent applications</span>
+      <div class="c2_8" style="border-top: 1px solid rgba(12,11,10,0.30); background: rgba(12,11,10,0.05); padding: 9px 14px; margin-top: 24px;">
+        <span class="lbl" style="color: #A32A12;">03 · Agent applications</span>
       </div>
     </div>
-    <div class="g" style="padding-bottom: 96px;">
+    <div class="g" style="padding-bottom: 80px;">
       <div class="c1"></div>
-      <div class="c2_8 note" style="color: #C62D0E; padding: 14px 14px 0; font-style: italic;">Open. This is where we are writing first cheques now.</div>
+      <div class="c2_8 note" style="color: #A32A12; padding: 13px 14px 0;">Open. This is where we are writing first cheques now.</div>
     </div>
 
   </div>
 </div>
 
-<!-- ═══════ 03 · the ask ═══════ -->
 <div style="max-width: 1160px; margin: 0 auto; padding: 0 68px;">
-  <div style="padding: 96px 0 0;">
-    <div class="g" style="margin-bottom: 44px;">
+  <div style="padding: 80px 0 0;">
+    <div class="g top" style="margin-bottom: 40px;">
       <div class="c1 lbl" style="color: #8C867C;">03</div>
-      <h2 class="c2_8 d60">Tell us the line you strike out.<br>We answer within a week.</h2>
+      <h2 class="c2_8 d44">Tell us the line you strike out.<br>We answer within a week.</h2>
     </div>
-    <div class="g">
+    <div class="g base">
       <div class="c2_5">
-        <p class="lead" style="color: #C0B9AE; margin-bottom: 34px;">No warm intro required. One paragraph is enough to start.</p>
+        <p class="lead" style="color: #D6D0C6; margin-bottom: 32px;">No warm intro required. One paragraph is enough to start.</p>
         <span style="display: inline-flex; align-items: center; gap: 16px; background: #F2F0EA; color: #0C0B0A; font-family: 'Archivo', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.13em; text-transform: uppercase; padding: 18px 26px;">
           Send us one paragraph
-          <svg width="18" height="12" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M0 6h15.4M11.6 2.1L15.7 6 11.6 9.9" stroke="#0C0B0A" stroke-width="1.7" stroke-linecap="square"/></svg>
+          <svg width="18" height="12" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M0 6h15.2M11.4 2.1L15.5 6 11.4 9.9" stroke="#0C0B0A" stroke-width="2" stroke-linecap="square"/></svg>
         </span>
-        <div class="lead" style="margin-top: 26px; color: #C0B9AE;">or <a href="#">frontier@iosg.vc</a></div>
+        <div class="lead" style="margin-top: 24px; color: #C0B9AE;">or <a href="#">frontier@iosg.vc</a></div>
       </div>
       <div class="c6_8">
-        <div class="hr" style="padding: 12px 0 13px;"><div class="lbl" style="color: #8C867C; margin-bottom: 7px;">Compute</div><div class="note" style="color: #C0B9AE;">Cheaper across the portfolio</div></div>
-        <div class="hr" style="padding: 12px 0 13px;"><div class="lbl" style="color: #8C867C; margin-bottom: 7px;">Sales</div><div class="note" style="color: #C0B9AE;">Warm customer intros for enterprise</div></div>
-        <div class="hr" style="padding: 12px 0 13px;"><div class="lbl" style="color: #8C867C; margin-bottom: 7px;">Hardware</div><div class="note" style="color: #C0B9AE;">Our Shenzhen supply chain from day one</div></div>
+        <div class="hr" style="padding: 11px 0 12px;"><div class="lbl" style="color: #8C867C; margin-bottom: 7px;">Compute costs</div><div class="note" style="color: #D6D0C6;">Cheaper across the portfolio</div></div>
+        <div class="hr" style="padding: 11px 0 12px;"><div class="lbl" style="color: #8C867C; margin-bottom: 7px;">Sales</div><div class="note" style="color: #D6D0C6;">Warm customer intros for enterprise</div></div>
+        <div class="hr" style="padding: 11px 0 12px;"><div class="lbl" style="color: #8C867C; margin-bottom: 7px;">Hardware</div><div class="note" style="color: #D6D0C6;">Our Shenzhen supply chain from day one</div></div>
       </div>
     </div>
-
-    <div class="g hr" style="margin-top: 96px; padding: 20px 0 40px;">
+    <div class="g hr base" style="margin-top: 80px; padding: 20px 0 40px;">
       <div class="lbl" style="grid-column: 1 / 5; color: #8C867C;">IOSF · A fund by IOSG Ventures</div>
-      <div style="grid-column: 5 / 9; text-align: right; font-family: 'Archivo', sans-serif; font-size: 11px; line-height: 1.6; color: #8C867C;">This page is not an offer to sell securities.</div>
+      <div class="lbl ra" style="grid-column: 5 / 9; color: #8C867C;">Not an offer to sell securities</div>
     </div>
   </div>
 </div>
