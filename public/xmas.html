@@ -62,8 +62,8 @@
       <ol>
         <li>双手舞动 → 圣诞树从地面长出来</li>
         <li>捏合拇指和食指 → 点亮整棵树</li>
-        <li>两只手一起挥 → 变出一堆礼物</li>
-        <li>捏住礼物拖到树下，或双手往下压 → 全部放好</li>
+        <li>挥挥手 → 圣诞老人背着一袋礼物出场</li>
+        <li>捏住礼物拖到树下，或双手往下压 → 全部放好，圣诞老人挥手拜拜</li>
       </ol>
       <button class="big" id="start">开启摄像头，开始 ✨</button>
       <p id="loadMsg"></p>
@@ -219,8 +219,10 @@ const HINTS = {
   grow: '🙌 双手舞动起来，让圣诞树长出来',
   light: '🤏 捏合拇指和食指，点亮圣诞树',
   lighting: '✨ 点灯中…',
-  gifts: '🎁 两只手一起挥动，变出礼物',
+  santa: '👋 挥挥手，召唤圣诞老人',
+  santaIn: '🎅 Ho ho ho！礼物来啦',
   place: '👇 捏住礼物拖到树下，或双手往下压',
+  bye: '👋 和圣诞老人说拜拜',
   finale: '🎄 Merry Christmas！捏一下手指放烟花',
 };
 let hintsOn = true;
@@ -335,10 +337,14 @@ function makeHand(key, nx, ny, pinchRatio, open, lm, t, dt) {
   s.x += (tx - s.x) * .55; s.y += (ty - s.y) * .55;
   const ivx = s.fresh ? 0 : (s.x - px0) / Math.max(dt, 1 / 120), ivy = s.fresh ? 0 : (s.y - py0) / Math.max(dt, 1 / 120);
   s.vx += (ivx - s.vx) * .35; s.vy += (ivy - s.vy) * .35; s.fresh = false; s.seen = t;
+  // wave = left/right direction flips of a moving hand
+  if (!s.flips) { s.flips = []; s.dir = 0; }
+  if (Math.abs(s.vx) > 14) { const d = Math.sign(s.vx); if (s.dir && d !== s.dir) s.flips.push(t); s.dir = d; }
+  while (s.flips.length && t - s.flips[0] > 1.6) s.flips.shift();
   const wasPinch = s.pinch;
   s.pinch = wasPinch ? pinchRatio < .55 : pinchRatio < .33;
   return { key, x: s.x, y: s.y, vx: s.vx, vy: s.vy, speed: Math.hypot(s.vx, s.vy), pinch: s.pinch,
-    pinchStart: s.pinch && !wasPinch, pinchEnd: !s.pinch && wasPinch, open, lm, nx, ny };
+    pinchStart: s.pinch && !wasPinch, pinchEnd: !s.pinch && wasPinch, open, lm, nx, ny, waves: s.flips.length };
 }
 
 // mouse fallback (also handy for testing without a camera)
@@ -362,14 +368,13 @@ function burst(x, y, n, colorFn, spd = 18, life = 1.1) {
 }
 
 // ---------- gifts ----------
-const GIFT_COLORS = [[235, 60, 75], [70, 140, 245], [245, 200, 70], [185, 85, 230], [45, 205, 150], [255, 125, 50], [240, 240, 250]];
-function spawnGift(x, y) {
+const GIFT_COLORS = [[230, 35, 50], [200, 20, 40], [255, 70, 80], [175, 15, 35], [240, 50, 65]];  // all red, different shades
+function spawnGift(x, y, vx = rand(-4, 4), vy = rand(-6, -2)) {
   if (S.gifts.length >= MAX_GIFTS) return;
   const col = GIFT_COLORS[Math.floor(rand(0, GIFT_COLORS.length))];
-  let rib = Math.random() < .5 ? [255, 225, 120] : [255, 255, 255];
-  if (col[0] > 230 && col[1] > 230) rib = [235, 60, 75];
+  const rib = Math.random() < .6 ? [255, 215, 100] : [255, 255, 255];
   S.gifts.push({ x: clamp(x, 6, COLS - 6), y: clamp(y, 10, GROUND - 2), w: 6 + Math.floor(rand(0, 3)) * 1 + 1, h: 5 + Math.floor(rand(0, 3)),
-    col, rib, state: 'float', ph: rand(0, 6.28), vx: rand(-4, 4), vy: rand(-6, -2), holder: null, slot: -1, delay: 0, born: now() });
+    col, rib, state: 'float', ph: rand(0, 6.28), vx, vy, holder: null, slot: -1, delay: 0, born: now() });
   burst(x, y, 22, () => (Math.random() < .5 ? [255, 230, 140] : col), 22, .8);
   sfx.pop();
 }
@@ -411,51 +416,69 @@ function updateBeat(t, dt) {
   beat.active = t - beat.last < 2.5;
 }
 
-// ---------- reindeer (faces left, toward the tree) ----------
-const DEER_TOP = [
-  '..a..a..........',
-  '..a.aa.a........',
-  '...aa.aa........',
-  '....aa..........',
-  '...###..........',
-  '..#e##..........',
-  'n####...........',
-  '...###..........',
-  '....###.........',
+// ---------- Santa (front view, sack of gifts on his left) ----------
+const SANTA = [
+  '....rrrrrr..........',
+  '...rrrrrrrrrrp......',
+  '..wwwwwwwwww........',
+  '..ssssssssss........',
+  '..sssessesss........',
+  '..ssssnnssss........',
+  '..swwwwwwwws........',
+  '.wwwwwwwwwwww.......',
+  '.rwwwwwwwwwwr...bbb.',
+  '..rwwwwwwwwrrr.bbbbb',
+  '..rrwwwwwwrrrr.bbbbb',
+  '..rrrwwwwrrrrrbbbbbb',
+  '..rrrrrrrrrrrwbbbbbb',
+  '.kkkkkkgkkkkk.bbbbbb',
+  '.rrrrrrrrrrrr.bbbbbb',
+  '.rrrrrwwrrrrr..bbbb.',
+  '.wwwwwwwwwwww.......',
 ];
-const DEER_BODY = [
-  '....#####t......',
-  '....##########..',
-  '....###w#w####..',
-  '....##########..',
-  '.....########...',
+const SANTA_LEGS = [
+  ['..rrrr...rrrr.......', '..rrrr...rrrr.......', '.kkkkk..kkkkk.......'],
+  ['..rrrr..rrrr........', '.rrrr.....rrrr......', 'kkkkk......kkkk.....'],
 ];
-const DEER_LEGS = [
-  ['.....#.#....#.#.', '.....#.#....#.#.', '.....#.#....#.#.', '.....h.h....h.h.'],
-  ['.....##.....##..', '....#..#...#..#.', '....#..#...#..#.', '...h....h.h....h'],
+// his right arm (viewer's left): hanging, and two waving poses
+const ARM_DOWN = [[0, 9, 'r'], [1, 9, 'r'], [0, 10, 'r'], [1, 10, 'r'], [0, 11, 'r'], [1, 11, 'r'], [0, 12, 'w'], [1, 12, 'w']];
+const ARM_WAVE = [
+  // arm raised out to the side, hand tilted outward
+  [[1, 9, 'r'], [0, 9, 'r'], [0, 8, 'r'], [-1, 8, 'r'], [-1, 7, 'r'], [-2, 7, 'r'], [-2, 6, 'r'], [-3, 6, 'r'], [-3, 5, 'r'], [-4, 5, 'r'],
+   [-4, 4, 'w'], [-5, 4, 'w'], [-4, 3, 'w'], [-5, 3, 'w'], [-5, 2, 'w'], [-6, 2, 'w']],
+  // arm straight up, hand tilted inward
+  [[1, 9, 'r'], [0, 9, 'r'], [0, 8, 'r'], [-1, 8, 'r'], [-1, 7, 'r'], [-2, 7, 'r'], [-2, 6, 'r'], [-2, 5, 'r'], [-1, 6, 'r'], [-1, 5, 'r'],
+   [-2, 4, 'w'], [-1, 4, 'w'], [-2, 3, 'w'], [-1, 3, 'w'], [-1, 2, 'w'], [0, 2, 'w']],
 ];
-const DEER_X = 46, DEER_BOTTOM = 82, DS = 2; // DS = cells per sprite pixel
-function drawDeer(t) {
-  const d = S.deer; if (!d) return;
-  const walking = d.x > DEER_X + .05;
-  const legs = DEER_LEGS[walking ? Math.floor(t / .16) % 2 : 0];
-  const nod = !walking && beat.pulse > .45 ? 1 : 0;           // nods to the beat
-  const hop = walking ? Math.abs(Math.sin(t * 9.8)) * 1.5 : 0;
-  const rows = DEER_TOP.length + DEER_BODY.length + legs.length;
-  const x0 = Math.round(d.x), y0 = Math.round(DEER_BOTTOM - rows * DS + 1 - hop);
-  const body = [242, 238, 230], ant = [215, 175, 115], hoof = [150, 120, 90];
-  const nose = beat.active ? [255, 60 + 150 * (1 - beat.pulse), 70] : [255, 90, 90];
-  const parts = [[DEER_BODY, DEER_TOP.length], [legs, DEER_TOP.length + DEER_BODY.length], [DEER_TOP, nod / DS]];
-  // pass 0: dark outline so the deer separates from the tree; pass 1: the deer itself
-  for (let pass = 0; pass < 2; pass++) for (const [rowsArr, oy] of parts) rowsArr.forEach((row, ry) => [...row].forEach((ch, rx) => {
-    if (ch === '.') return;
-    const bx = x0 + rx * DS, by = y0 + Math.round((oy + ry) * DS);
-    if (pass === 0) { for (let dy = -1; dy <= DS; dy++) for (let dx = -1; dx <= DS; dx++) px(bx + dx, by + dy, 6, 8, 14); return; }
-    if (ch === 'e') return;
-    const c = ch === '#' || ch === 't' ? body : ch === 'a' ? ant : ch === 'w' ? [255, 255, 255] : ch === 'n' ? nose : ch === 'h' ? hoof : body;
+const SANTA_X = 41, SANTA_BOTTOM = 82, DS = 2; // DS = cells per sprite pixel
+const SANTA_COL = { r: [225, 30, 45], w: [250, 250, 250], s: [255, 200, 170], n: [255, 140, 130], k: [25, 20, 25], g: [255, 210, 80], b: [150, 95, 50], p: [255, 255, 255] };
+function drawSanta(t) {
+  const d = S.santa; if (!d) return;
+  const walking = Math.abs(d.x - d.tx) > .05;
+  const legs = SANTA_LEGS[walking ? Math.floor(t / .16) % 2 : 0];
+  const waving = S.stage === 'bye' && !walking;
+  const arm = waving ? ARM_WAVE[Math.floor(t / .22) % 2] : ARM_DOWN;
+  const bob = walking ? Math.abs(Math.sin(t * 9.8)) * 1.5 : (beat.pulse > .5 ? 1 : 0);  // bounces to the beat when standing
+  const rows = SANTA.length + legs.length;
+  const x0 = Math.round(d.x), y0 = Math.round(SANTA_BOTTOM - rows * DS + 1 - bob);
+  const pix = [];
+  SANTA.forEach((row, ry) => [...row].forEach((ch, rx) => ch !== '.' && pix.push([rx, ry, ch])));
+  legs.forEach((row, ry) => [...row].forEach((ch, rx) => ch !== '.' && pix.push([rx, ry + SANTA.length, ch])));
+  arm.forEach(a => pix.push(a));
+  // pass 0: dark outline so Santa separates from the tree; pass 1: Santa himself
+  for (let pass = 0; pass < 2; pass++) for (const [rx, ry, ch] of pix) {
+    const bx = x0 + rx * DS, by = y0 + ry * DS;
+    if (pass === 0) { for (let dy = -1; dy <= DS; dy++) for (let dx = -1; dx <= DS; dx++) px(bx + dx, by + dy, 6, 8, 14); continue; }
+    if (ch === 'e') continue;
+    const c = SANTA_COL[ch];
     for (let dy = 0; dy < DS; dy++) for (let dx = 0; dx < DS; dx++) px(bx + dx, by + dy, ...c);
-  }));
+  }
 }
+function summonSanta(t) {
+  S.santa = { x: COLS + 2, tx: SANTA_X, popped: 0, nextPop: 0 };
+  sfx.chime(); go('santaIn');
+}
+function hoHoHo() { [196, 196, 175].forEach((f, i) => { tone(f, .28, 'triangle', .2, i * .3); tone(f * 2, .2, 'sine', .06, i * .3); }); }
 
 function update(t, dt) {
   const st = S.stage;
@@ -483,16 +506,20 @@ function update(t, dt) {
     if (hands.some(h => h.pinchStart)) { S.lightT = t; sfx.lights(); go('lighting'); }
   } else if (st === 'lighting') {
     S.light = clamp((t - S.lightT) / 2.6, 0, 1);
-    if (S.light >= 1 && t - S.lightT > 3.4) go('gifts');
-  } else if (st === 'gifts') {
-    if (!S.deer) { S.deer = { x: COLS + 2 }; sfx.chime(); }
-    const both = hands.length >= 2;
-    for (const h of hands) {
-      const cd = both ? .42 : .9, last = S.lastSpawn[h.key] || 0;
-      if (h.speed > 28 && t - last > cd && t - S.stageT > .6) { S.lastSpawn[h.key] = t; spawnGift(h.x, h.y); }
+    if (S.light >= 1 && t - S.lightT > 3.4) go('santa');
+  } else if (st === 'santa') {
+    if (hands.some(h => h.waves >= 3) && t - S.stageT > .5) summonSanta(t);
+  } else if (st === 'santaIn') {
+    const d = S.santa;
+    if (Math.abs(d.x - d.tx) < .05) {
+      if (!d.arrived) { d.arrived = t; hoHoHo(); }
+      // gifts fly out of the sack one by one
+      if (t - d.arrived > 1 && d.popped < MAX_GIFTS && t > d.nextPop) {
+        d.popped++; d.nextPop = t + .32;
+        spawnGift(d.x + 34, SANTA_BOTTOM - 26, rand(-26, -8), rand(-22, -12));
+      }
+      if (d.popped >= MAX_GIFTS && t - d.nextPop > .8) go('place');
     }
-    if (S.gifts.length >= MAX_GIFTS && !S.fullT) S.fullT = t;
-    if (S.fullT && t - S.fullT > 1) go('place');
   } else if (st === 'place' || st === 'finale') {
     for (const h of hands) {
       if (h.pinchStart && st === 'place') {
@@ -511,11 +538,13 @@ function update(t, dt) {
     }
     if (st === 'place' && S.gifts.length && S.gifts.every(g => g.state === 'placed')) {
       if (!S.doneT) S.doneT = t;
-      if (t - S.doneT > .7) { S.finaleT = t; go('finale'); sfx.lights(); }
+      if (t - S.doneT > .7) { go('bye'); hoHoHo(); }
     }
   }
 
-  if (S.deer && S.deer.x > DEER_X) S.deer.x = Math.max(DEER_X, S.deer.x - 7 * dt);
+  if (st === 'bye' && t - S.stageT > 3.2) S.santa.tx = COLS + 4;   // waves bye-bye, then walks off
+  if (st === 'bye' && S.santa.x > COLS + 3) { S.santa = null; S.finaleT = t; go('finale'); sfx.lights(); }
+  if (S.santa) { const d = S.santa, dir = Math.sign(d.tx - d.x); d.x += dir * Math.min(Math.abs(d.tx - d.x), 9 * dt); }
   // gifts physics
   for (const g of S.gifts) {
     if (g.state === 'float') {
@@ -589,7 +618,7 @@ function renderTree(t) {
     const sy = TOP - 2, k = lit > 0 ? 1 : .7;
     [[0,0],[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,-2],[1,1],[-1,1],[1,-1],[-1,-1]].forEach(([dx, dy]) => px(CX + dx, sy + dy, 255 * k, 220 * k, 110 * k));
   }
-  drawDeer(t);
+  drawSanta(t);
   // gifts: placed (sorted back→front), then floating/held on top
   [...S.gifts].sort((a, b) => (a.state === 'placed') === (b.state === 'placed') ? a.y - b.y : a.state === 'placed' ? -1 : 1).forEach(drawGift);
   // snow
@@ -771,7 +800,7 @@ window.addEventListener('keydown', e => {
     const st = S.stage;
     if (st === 'grow') S.grow = 1;
     else if (st === 'light') { S.lightT = now(); sfx.lights(); go('lighting'); }
-    else if (st === 'gifts') spawnGift(rand(10, COLS - 10), rand(25, 60));
+    else if (st === 'santa') summonSanta(now());
     else if (st === 'place') { let k = 0; for (const g of S.gifts) if (g.state === 'float') dropGift(g, (k++) * .14); }
   }
   if (e.key === 'r' || e.key === 'R') { resetScene(); if (started) playMusic(true); }
