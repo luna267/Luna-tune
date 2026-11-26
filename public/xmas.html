@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gesture Xmas Tree</title>
+<style>
+  :root {
+    --bg: #03050a;
+    --panel: rgba(18, 22, 34, 0.82);
+    --line: rgba(255, 255, 255, 0.12);
+    --text: #f3f0e8;
+    --muted: #a7a9b4;
+    --gold: #ffd36b;
+    --red: #ff4d5e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Helvetica Neue", sans-serif; overflow: hidden; }
+  #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding-bottom: 76px; }
+  #stage { position: relative; height: 100%; aspect-ratio: 9 / 16; max-width: 100vw; }
+  canvas#view { width: 100%; height: 100%; display: block; background: #000; border-radius: 14px; }
+  video#cam { position: absolute; width: 2px; height: 2px; opacity: 0; pointer-events: none; }
+
+  #hint { position: absolute; left: 50%; top: 37.5%; transform: translate(-50%, -50%);
+    background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(10px);
+    padding: 8px 16px; border-radius: 999px; font-size: clamp(12px, 1.9vh, 16px); white-space: nowrap;
+    transition: opacity .4s; pointer-events: none; }
+  #hint.off { opacity: 0; }
+
+  #intro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; text-align: center; padding: 24px; background: radial-gradient(ellipse at 50% 60%, rgba(30,60,40,.35), rgba(0,0,0,.75));
+    border-radius: 14px; }
+  #intro h1 { margin: 0; font-size: clamp(22px, 4vh, 34px); letter-spacing: .02em; }
+  #intro p { margin: 0; color: var(--muted); font-size: clamp(12px, 1.7vh, 15px); line-height: 1.7; }
+  #intro ol { text-align: left; color: var(--text); font-size: clamp(12px, 1.7vh, 15px); line-height: 1.9; margin: 4px 0; padding-left: 1.4em; }
+  .big { font-size: 18px; padding: 12px 30px; border-radius: 999px; border: 0; cursor: pointer;
+    background: linear-gradient(135deg, #2ea85a, #1d7a42); color: #fff; font-weight: 600; box-shadow: 0 6px 24px rgba(46,168,90,.35); }
+  .hidden { display: none !important; }
+
+  #bar { position: fixed; left: 0; right: 0; bottom: 0; height: 76px; display: flex; align-items: center; justify-content: center;
+    gap: 10px; padding: 0 12px; flex-wrap: nowrap; overflow-x: auto; }
+  #bar button, #bar label { flex: none; font: inherit; font-size: 14px; color: var(--text); background: var(--panel);
+    border: 1px solid var(--line); padding: 9px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+  #bar button:hover, #bar label:hover { border-color: rgba(255,255,255,.3); }
+  #rec.on { background: var(--red); border-color: var(--red); }
+  #musicName { color: var(--muted); font-size: 12px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #toast { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line);
+    padding: 8px 14px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 5; }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="stage">
+    <canvas id="view" width="720" height="1280"></canvas>
+    <video id="cam" playsinline muted></video>
+    <div id="hint" class="off"></div>
+    <div id="intro">
+      <h1>🎄 手势圣诞树</h1>
+      <p>用你的手跳一支舞，把圣诞树变出来</p>
+      <ol>
+        <li>双手舞动 → 圣诞树从地面长出来</li>
+        <li>捏合拇指和食指 → 点亮整棵树</li>
+        <li>两只手一起挥 → 变出一堆礼物</li>
+        <li>捏住礼物拖到树下，或双手往下压 → 全部放好</li>
+      </ol>
+      <button class="big" id="start">开启摄像头，开始 ✨</button>
+      <p id="loadMsg"></p>
+    </div>
+  </div>
+</div>
+
+<div id="bar">
+  <label for="musicFile">🎵 选择音乐</label>
+  <input id="musicFile" type="file" accept="audio/*" class="hidden">
+  <span id="musicName">未选择</span>
+  <button id="rec">● 录制视频</button>
+  <button id="reset">↺ 重来</button>
+  <button id="hintBtn">提示 开</button>
+</div>
+<div id="toast"></div>
+<audio id="music" preload="auto" loop></audio>
+
+<script type="module">
+// ---------- constants ----------
+const W = 720, H = 1280;
+const CAM_H = 470;                 // top panel: webcam + hand skeleton
+const TY = CAM_H, TH = H - CAM_H;  // bottom panel: dot-matrix tree
+const CELL = 9;
+const COLS = Math.floor(W / CELL), ROWS = Math.floor(TH / CELL); // 80 x 90
+const CX = 40, TOP = 23, BASE = 76, TREE_H = BASE - TOP;
+const GROUND = 79;
+const MAX_GIFTS = 9;
+const SLOTS = [
+  [8, 84], [22, 84], [58, 84], [72, 84],
+  [15, 89], [29, 89], [40, 89], [51, 89], [65, 89],
+];
+const DEFAULT_MUSIC = 'music/all-i-want-for-christmas.mp3';
+
+const view = document.getElementById('view');
+const ctx = view.getContext('2d');
+const video = document.getElementById('cam');
+const hintEl = document.getElementById('hint');
+const music = document.getElementById('music');
+
+// low-res colour buffer (one pixel per character cell)
+const lo = document.createElement('canvas'); lo.width = COLS; lo.height = ROWS;
+const loCtx = lo.getContext('2d');
+const img = loCtx.createImageData(COLS, ROWS);
+const buf = img.data;
+// glyph mask + composited tree layer
+const glyph = document.createElement('canvas'); glyph.width = W; glyph.height = TH;
+const tmp = document.createElement('canvas'); tmp.width = W; tmp.height = TH;
+const tmpCtx = tmp.getContext('2d');
+
+// ---------- helpers ----------
+function rand(a = 0, b = 1) { return a + Math.random() * (b - a); }
+function hash(x, y) { let h = (x * 374761393 + y * 668265263) ^ 0x5bf03635; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; }
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+function hsl(h, s, l) {
+  h = ((h % 360) + 360) % 360 / 360;
+  const q = l < .5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+  const f = t => { t = (t + 1) % 1; return t < 1/6 ? p + (q - p) * 6 * t : t < .5 ? q : t < 2/3 ? p + (q - p) * (2/3 - t) * 6 : p; };
+  return [f(h + 1/3) * 255, f(h) * 255, f(h - 1/3) * 255];
+}
+function px(x, y, r, g, b, a = 255) {
+  x = Math.round(x); y = Math.round(y);
+  if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return;
+  const i = (y * COLS + x) * 4;
+  buf[i] = r; buf[i + 1] = g; buf[i + 2] = b; buf[i + 3] = a;
+}
+function toast(msg) {
+  const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+// ---------- glyph mask ----------
+(function buildGlyphs() {
+  const g = glyph.getContext('2d');
+  g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = `bold ${Math.round(CELL * 1.25)}px "Courier New", Menlo, monospace`;
+  const chars = '000000000ooooOOO88@@#*%&';
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+    const c = chars[Math.floor(hash(x, y + 999) * chars.length)];
+    g.fillText(c, x * CELL + CELL / 2, y * CELL + CELL / 2 + 1);
+  }
+})();
+
+// ---------- tree model ----------
+const tiers = [];
+for (let i = 0; i < 5; i++) {
+  const top = TOP + i * TREE_H * 0.17, th = TREE_H * 0.32;
+  tiers.push({ top, bot: top + th, th, hw: 9 + i * 7 });
+}
+const ORN_COLORS = [[255, 70, 80], [255, 205, 80], [80, 150, 255], [220, 90, 255], [60, 230, 220], [255, 140, 60]];
+const treeCells = [];
+for (let y = TOP - 1; y <= BASE; y++) for (let x = 0; x < COLS; x++) {
+  let inside = false, garland = false, tier = -1;
+  for (let i = 0; i < tiers.length; i++) {
+    const T = tiers[i];
+    if (y < T.top || y > T.bot) continue;
+    const f = (y - T.top) / T.th;
+    const jag = (Math.floor(y) % 2 === 0 ? 1 : 0) * (f > .55 ? 1.2 : 0);
+    const half = T.hw * f + 0.6 + jag * hash(x, y) ;
+    if (Math.abs(x - CX) <= half) {
+      inside = true; tier = i;
+      const u = (x - CX) / Math.max(T.hw, 1);
+      const ys = T.top + T.th * (0.5 + 0.28 * (1 - u * u)) ;
+      if (Math.abs(y - ys) < 0.6 && f > .3) garland = true;
+    }
+  }
+  if (!inside) continue;
+  const t = (y - TOP) / TREE_H;
+  const n = hash(x, y);
+  const orn = !garland && hash(y, x + 77) < 0.075;
+  treeCells.push({
+    x, y, t, garland, orn,
+    green: [25 + n * 45, 120 + n * 95 + (1 - t) * 20, 60 + n * 60 + (hash(x + 3, y) < .15 ? 70 : 0)],
+    oc: ORN_COLORS[Math.floor(hash(x + 11, y + 5) * ORN_COLORS.length)],
+    ph: hash(x + 1, y + 2) * 6.28,
+    jit: hash(x + 9, y + 9),
+  });
+}
+const bgStars = Array.from({ length: 170 }, () => ({ x: rand(0, W), y: rand(TY + 4, TY + TH * 0.86), s: Math.random() < .12 ? 2.4 : 1.4, ph: rand(0, 6.28), sp: rand(.6, 2.2) }));
+
+// pixel font for the finale text
+const FONT = {
+  M: ['10001','11011','10101','10101','10001','10001','10001'],
+  E: ['11111','10000','10000','11110','10000','10000','11111'],
+  R: ['11110','10001','10001','11110','10100','10010','10001'],
+  Y: ['10001','10001','01010','00100','00100','00100','00100'],
+  C: ['01110','10001','10000','10000','10000','10001','01110'],
+  H: ['10001','10001','10001','11111','10001','10001','10001'],
+  I: ['01110','00100','00100','00100','00100','00100','01110'],
+  S: ['01111','10000','10000','01110','00001','00001','11110'],
+  T: ['11111','00100','00100','00100','00100','00100','00100'],
+  A: ['01110','10001','10001','11111','10001','10001','10001'],
+};
+function textCells(str, y0) {
+  const out = [], w = str.length * 6 - 1, x0 = Math.round((COLS - w) / 2);
+  [...str].forEach((ch, li) => FONT[ch].forEach((row, ry) => [...row].forEach((b, rx) => {
+    if (b === '1') out.push({ x: x0 + li * 6 + rx, y: y0 + ry, li });
+  })));
+  return out;
+}
+const TEXT = [...textCells('MERRY', 3).map(c => ({ ...c, li: c.li })), ...textCells('CHRISTMAS', 12).map(c => ({ ...c, li: c.li + 5 }))];
+
+// ---------- scene state ----------
+let S;
+function resetScene() {
+  S = {
+    stage: 'grow', stageT: now(), grow: 0, starT: -1, lightT: -1, light: 0,
+    gifts: [], parts: [], snow: [], finaleT: -1, lastSpawn: {}, pushT: 0,
+  };
+  setHint();
+}
+const HINTS = {
+  grow: '🙌 双手舞动起来，让圣诞树长出来',
+  light: '🤏 捏合拇指和食指，点亮圣诞树',
+  lighting: '✨ 点灯中…',
+  gifts: '🎁 两只手一起挥动，变出礼物',
+  place: '👇 捏住礼物拖到树下，或双手往下压',
+  finale: '🎄 Merry Christmas！捏一下手指放烟花',
+};
+let hintsOn = true;
+function setHint() {
+  hintEl.textContent = HINTS[S.stage] || '';
+  hintEl.classList.toggle('off', !hintsOn || !started);
+}
+function go(stage) { S.stage = stage; S.stageT = now(); setHint(); }
+function now() { return performance.now() / 1000; }
+
+// ---------- audio ----------
+let actx = null, master = null, recDest = null, musicNode = null;
+function initAudio() {
+  if (actx) return;
+  actx = new (window.AudioContext || window.webkitAudioContext)();
+  master = actx.createGain(); master.gain.value = 0.9;
+  master.connect(actx.destination);
+  recDest = actx.createMediaStreamDestination();
+  master.connect(recDest);
+  try { musicNode = actx.createMediaElementSource(music); musicNode.connect(master); } catch (e) { console.warn(e); }
+}
+function tone(freq, dur = .4, type = 'sine', vol = .18, delay = 0) {
+  if (!actx) return;
+  const t0 = actx.currentTime + delay, o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol, t0 + .01); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+  o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + dur + .05);
+}
+const sfx = {
+  chime() { [1318, 1568, 2093].forEach((f, i) => tone(f, .9, 'sine', .12, i * .07)); },
+  lights() { [784, 988, 1175, 1568, 1976, 2349, 3136].forEach((f, i) => tone(f, .7, 'triangle', .09, i * .09)); },
+  pop() { tone(rand(600, 900), .18, 'triangle', .14); tone(rand(1200, 1600), .25, 'sine', .07, .03); },
+  drop() { tone(220, .25, 'sine', .16); tone(440, .3, 'triangle', .05, .02); },
+  burst() { [2093, 2637, 3136].forEach((f, i) => tone(f * rand(.95, 1.05), .5, 'sine', .06, i * .05)); },
+};
+async function playMusic(fromStart) {
+  if (!music.src) return;
+  try { if (fromStart) music.currentTime = 0; await music.play(); } catch (e) { console.warn('music', e); }
+}
+// try a music file dropped into public/music/
+fetch(DEFAULT_MUSIC, { method: 'HEAD' }).then(r => {
+  if (r.ok && (r.headers.get('content-type') || '').startsWith('audio')) {
+    music.src = DEFAULT_MUSIC; document.getElementById('musicName').textContent = 'All I Want For Christmas Is You';
+  }
+}).catch(() => {});
+document.getElementById('musicFile').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  music.src = URL.createObjectURL(f);
+  document.getElementById('musicName').textContent = f.name;
+  if (started) playMusic(true);
+});
+
+// ---------- hand tracking ----------
+let landmarker = null, started = false, camOK = false, lastVideoTime = -1;
+const handState = {};  // smoothing per hand key
+let hands = [];         // processed hands this frame
+const CONN = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+
+async function initTracking() {
+  const msg = document.getElementById('loadMsg');
+  msg.textContent = '正在打开摄像头…';
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+    video.srcObject = stream; await video.play(); camOK = true;
+  } catch (e) {
+    console.warn(e); toast('没拿到摄像头权限：先用鼠标代替手（按住 = 捏合）'); return;
+  }
+  msg.textContent = '正在加载手势模型…';
+  try {
+    const { FilesetResolver, HandLandmarker } = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+    const fs = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+    const opts = d => ({ baseOptions: { modelAssetPath: 'models/hand_landmarker.task', delegate: d }, runningMode: 'VIDEO', numHands: 2,
+      minHandDetectionConfidence: .5, minHandPresenceConfidence: .5, minTrackingConfidence: .5 });
+    try { landmarker = await HandLandmarker.createFromOptions(fs, opts('GPU')); }
+    catch { landmarker = await HandLandmarker.createFromOptions(fs, opts('CPU')); }
+  } catch (e) { console.warn(e); toast('手势模型加载失败，先用鼠标代替手'); }
+}
+
+function d2(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+function processHands(t, dt) {
+  const seen = new Set(); const out = [];
+  if (landmarker && camOK && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+    lastVideoTime = video.currentTime;
+    const res = landmarker.detectForVideo(video, performance.now());
+    processHands.last = res;
+  }
+  const res = processHands.last;
+  if (res && res.landmarks) res.landmarks.forEach((lm, i) => {
+    let key = (res.handednesses?.[i]?.[0]?.categoryName) || ('h' + i);
+    if (seen.has(key)) key += i; seen.add(key);
+    const size = d2(lm[0], lm[9]) || .1;
+    const palm = [0, 5, 9, 13, 17].reduce((a, k) => ({ x: a.x + lm[k].x / 5, y: a.y + lm[k].y / 5 }), { x: 0, y: 0 });
+    const ext = [[8, 6], [12, 10], [16, 14], [20, 18]].filter(([tp, pp]) => d2(lm[tp], lm[0]) > d2(lm[pp], lm[0]) * 1.12).length;
+    out.push(makeHand(key, 1 - palm.x, palm.y, d2(lm[4], lm[8]) / size, ext >= 3, lm, t, dt));
+  });
+  if (mouse.active && t - mouse.t < 2.5) out.push(makeHand('mouse', mouse.nx, mouse.ny, mouse.down ? .1 : 1, true, null, t, dt));
+  for (const k in handState) if (!out.find(h => h.key === k)) { if (t - handState[k].seen > .4) delete handState[k]; }
+  hands = out;
+}
+function makeHand(key, nx, ny, pinchRatio, open, lm, t, dt) {
+  // map camera space to tree panel (with margins so you don't have to reach the frame edge)
+  const tx = clamp((nx - .08) / .84, 0, 1) * COLS, ty = clamp((ny - .06) / .8, 0, 1) * ROWS;
+  let s = handState[key];
+  if (!s) s = handState[key] = { x: tx, y: ty, vx: 0, vy: 0, pinch: false, seen: t, fresh: true };
+  const px0 = s.x, py0 = s.y;
+  s.x += (tx - s.x) * .55; s.y += (ty - s.y) * .55;
+  const ivx = s.fresh ? 0 : (s.x - px0) / Math.max(dt, 1 / 120), ivy = s.fresh ? 0 : (s.y - py0) / Math.max(dt, 1 / 120);
+  s.vx += (ivx - s.vx) * .35; s.vy += (ivy - s.vy) * .35; s.fresh = false; s.seen = t;
+  const wasPinch = s.pinch;
+  s.pinch = wasPinch ? pinchRatio < .55 : pinchRatio < .33;
+  return { key, x: s.x, y: s.y, vx: s.vx, vy: s.vy, speed: Math.hypot(s.vx, s.vy), pinch: s.pinch,
+    pinchStart: s.pinch && !wasPinch, pinchEnd: !s.pinch && wasPinch, open, lm, nx, ny };
+}
+
+// mouse fallback (also handy for testing without a camera)
+const mouse = { active: false, nx: .5, ny: .5, down: false, t: 0 };
+function mousePos(e) {
+  const r = view.getBoundingClientRect();
+  const y = (e.clientY - r.top) / r.height * H;
+  mouse.nx = (e.clientX - r.left) / r.width;
+  mouse.ny = clamp((y - TY) / TH, 0, 1) * .8 + .06; mouse.t = now(); mouse.active = true;
+}
+view.addEventListener('pointermove', mousePos);
+view.addEventListener('pointerdown', e => { mousePos(e); mouse.down = true; });
+window.addEventListener('pointerup', () => { mouse.down = false; });
+
+// ---------- particles ----------
+function burst(x, y, n, colorFn, spd = 18, life = 1.1) {
+  for (let i = 0; i < n; i++) {
+    const a = rand(0, 6.28), v = rand(.3, 1) * spd;
+    S.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life, max: life, c: colorFn(i), g: 6 });
+  }
+}
+
+// ---------- gifts ----------
+const GIFT_COLORS = [[235, 60, 75], [70, 140, 245], [245, 200, 70], [185, 85, 230], [45, 205, 150], [255, 125, 50], [240, 240, 250]];
+function spawnGift(x, y) {
+  if (S.gifts.length >= MAX_GIFTS) return;
+  const col = GIFT_COLORS[Math.floor(rand(0, GIFT_COLORS.length))];
+  let rib = Math.random() < .5 ? [255, 225, 120] : [255, 255, 255];
+  if (col[0] > 230 && col[1] > 230) rib = [235, 60, 75];
+  S.gifts.push({ x: clamp(x, 6, COLS - 6), y: clamp(y, 10, GROUND - 2), w: 6 + Math.floor(rand(0, 3)) * 1 + 1, h: 5 + Math.floor(rand(0, 3)),
+    col, rib, state: 'float', ph: rand(0, 6.28), vx: rand(-4, 4), vy: rand(-6, -2), holder: null, slot: -1, delay: 0, born: now() });
+  burst(x, y, 22, () => (Math.random() < .5 ? [255, 230, 140] : col), 22, .8);
+  sfx.pop();
+}
+function freeSlot(x) {
+  const used = new Set(S.gifts.map(g => g.slot));
+  let best = -1, bd = 1e9;
+  SLOTS.forEach(([sx], i) => { if (!used.has(i) && Math.abs(sx - x) < bd) { bd = Math.abs(sx - x); best = i; } });
+  return best;
+}
+function dropGift(g, delay = 0) {
+  const s = freeSlot(g.x); if (s < 0) return;
+  g.slot = s; g.state = 'fall'; g.holder = null; g.delay = delay; g.vy = -4;
+}
+function drawGift(g) {
+  const x0 = Math.round(g.x - g.w / 2), y1 = Math.round(g.y), y0 = y1 - g.h + 1, cx = x0 + Math.floor(g.w / 2), ry = y0 + 1;
+  const lit = S.light > .99 ? .85 + .15 * Math.sin(now() * 3 + g.ph) : .85;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x < x0 + g.w; x++) {
+    let c = g.col;
+    if (x === cx || y === ry) c = g.rib;
+    else if (y === y0) c = c.map(v => Math.min(255, v * 1.15));
+    px(x, y, c[0] * lit, c[1] * lit, c[2] * lit);
+  }
+  px(cx - 1, y0 - 1, ...g.rib); px(cx + 1, y0 - 1, ...g.rib); px(cx - 2, y0 - 2, ...g.rib); px(cx + 2, y0 - 2, ...g.rib);
+}
+
+// ---------- update ----------
+function update(t, dt) {
+  const st = S.stage;
+  // sparkle trails from every hand
+  for (const h of hands) {
+    if (Math.random() < Math.min(1, h.speed / 40)) S.parts.push({ x: h.x + rand(-1, 1), y: h.y + rand(-1, 1), vx: rand(-3, 3), vy: rand(-3, 3), life: .5, max: .5, c: [255, 245, 210], g: 0 });
+  }
+
+  if (st === 'grow') {
+    let add = 0;
+    for (const h of hands) add += Math.min(h.speed, 70) * .0042 * dt + Math.max(0, -h.vy) * .0012 * dt;
+    if (add > 0) {
+      S.grow = Math.min(1, S.grow + add);
+      // green magic flying from hands to the growing edge
+      const n = Math.min(4, Math.floor(add * 900));
+      for (let i = 0; i < n; i++) {
+        const h = hands[Math.floor(rand(0, hands.length))];
+        const fy = BASE - S.grow * TREE_H, fx = CX + rand(-18, 18) * (1 - S.grow * .7);
+        S.parts.push({ x: h.x, y: h.y, vx: (fx - h.x) * 1.6, vy: (fy - h.y) * 1.6, life: .6, max: .6, c: hsl(rand(110, 160), .8, .6), g: 0 });
+      }
+    }
+    if (S.grow >= 1 && S.starT < 0) { S.starT = t; sfx.chime(); burst(CX, TOP - 2, 40, () => [255, 220, 120], 26, 1.2); }
+    if (S.starT > 0 && t - S.starT > 1.2) go('light');
+  } else if (st === 'light') {
+    if (hands.some(h => h.pinchStart)) { S.lightT = t; sfx.lights(); go('lighting'); }
+  } else if (st === 'lighting') {
+    S.light = clamp((t - S.lightT) / 2.6, 0, 1);
+    if (S.light >= 1 && t - S.lightT > 3.4) go('gifts');
+  } else if (st === 'gifts') {
+    const both = hands.length >= 2;
+    for (const h of hands) {
+      const cd = both ? .42 : .9, last = S.lastSpawn[h.key] || 0;
+      if (h.speed > 28 && t - last > cd && t - S.stageT > .6) { S.lastSpawn[h.key] = t; spawnGift(h.x, h.y); }
+    }
+    if (S.gifts.length >= MAX_GIFTS && !S.fullT) S.fullT = t;
+    if (S.fullT && t - S.fullT > 1) go('place');
+  } else if (st === 'place' || st === 'finale') {
+    for (const h of hands) {
+      if (h.pinchStart && st === 'place') {
+        let best = null, bd = 11;
+        for (const g of S.gifts) if (g.state === 'float') { const d = Math.hypot(g.x - h.x, (g.y - g.h / 2) - h.y); if (d < bd) { bd = d; best = g; } }
+        if (best) { best.state = 'held'; best.holder = h.key; sfx.pop(); }
+      }
+      if (h.pinchStart && st === 'finale') { burst(h.x, h.y, 36, () => hsl(rand(0, 360), .9, .65), 28, 1.3); sfx.burst(); }
+      if (h.pinchEnd || !h.pinch) for (const g of S.gifts) if (g.state === 'held' && g.holder === h.key) { dropGift(g); }
+    }
+    // push down with open hands
+    const pushers = hands.filter(h => h.open && h.vy > 38);
+    if (st === 'place' && (pushers.length >= 2 || hands.some(h => h.vy > 70)) && t - S.pushT > 1) {
+      S.pushT = t; let k = 0;
+      for (const g of S.gifts) if (g.state === 'float') dropGift(g, (k++) * .14);
+    }
+    if (st === 'place' && S.gifts.length && S.gifts.every(g => g.state === 'placed')) {
+      if (!S.doneT) S.doneT = t;
+      if (t - S.doneT > .7) { S.finaleT = t; go('finale'); sfx.lights(); }
+    }
+  }
+
+  // gifts physics
+  for (const g of S.gifts) {
+    if (g.state === 'float') {
+      g.vx *= .96; g.vy *= .96; g.x = clamp(g.x + g.vx * dt, 5, COLS - 5); g.y = clamp(g.y + g.vy * dt + Math.sin(t * 2 + g.ph) * .04, 12, GROUND - 3);
+    } else if (g.state === 'held') {
+      const h = hands.find(h => h.key === g.holder);
+      if (!h) dropGift(g); else { g.x += (h.x - g.x) * .4; g.y += (h.y + g.h / 2 - g.y) * .4; }
+    } else if (g.state === 'fall') {
+      if (g.delay > 0) { g.delay -= dt; continue; }
+      const [sx, sy] = SLOTS[g.slot];
+      g.x += (sx - g.x) * Math.min(1, dt * 5);
+      g.vy += 120 * dt; g.y += g.vy * dt;
+      if (g.y >= sy) { g.y = sy; g.x = sx; if (g.vy > 30) { g.vy = -g.vy * .3; sfx.drop(); burst(sx, sy, 10, () => [255, 230, 160], 10, .5); } else { g.state = 'placed'; } }
+    }
+  }
+
+  // particles
+  S.parts = S.parts.filter(p => (p.life -= dt) > 0);
+  for (const p of S.parts) { p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= .985; p.vy *= .985; }
+  if (S.parts.length > 900) S.parts.splice(0, S.parts.length - 900);
+
+  // finale: snow + fireworks
+  if (st === 'finale') {
+    if (Math.random() < dt * 14) S.snow.push({ x: rand(0, COLS), y: -1, vy: rand(4, 9), ph: rand(0, 6.28) });
+    if (Math.random() < dt * .9) { const fx = rand(8, COLS - 8), fy = rand(4, 30), hue = rand(0, 360); burst(fx, fy, 40, () => hsl(hue + rand(-20, 20), .9, .65), 22, 1.4); sfx.burst(); }
+  }
+  for (const s of S.snow) { s.y += s.vy * dt; s.x += Math.sin(t + s.ph) * dt * 2; }
+  S.snow = S.snow.filter(s => s.y < ROWS);
+}
+
+// ---------- render ----------
+function renderTree(t) {
+  buf.fill(0);
+  const lit = S.light;
+  // ground: perspective dashes
+  for (let y = GROUND; y < ROWS; y++) {
+    if ((y - GROUND) % 2) continue;
+    const k = (y - GROUND) / (ROWS - GROUND), a = .35 + k * .5;
+    for (let x = 0; x < COLS; x++) if ((x + y * 3) % 9 < 6) px(x, y, 200 * a, 165 * a, 80 * a);
+  }
+  // trunk
+  if (S.grow > 0.01) for (let y = BASE - 1; y <= BASE + 3; y++) for (let x = CX - 3; x <= CX + 3; x++) px(x, y, 150, 75, 40);
+  // tree cells
+  const g = S.grow;
+  for (const c of treeCells) {
+    const fromBottom = 1 - c.t;
+    const reveal = g * 1.06 - c.jit * .06;
+    if (fromBottom > reveal) continue;
+    const edge = reveal - fromBottom < .035 && g < 1;
+    if (edge) { px(c.x, c.y, 230, 255, 230); continue; }
+    const on = lit > 0 && c.t <= lit * 1.15;
+    if (c.garland) {
+      if (on) { const [r, gg, b] = hsl(c.x * 9 + c.y * 4 - t * 140, .95, .62); px(c.x, c.y, r, gg, b); }
+      else px(c.x, c.y, 150, 150, 120);
+    } else if (c.orn) {
+      const o = c.oc;
+      if (on) { const k = .55 + .45 * Math.sin(t * 4 + c.ph); px(c.x, c.y, o[0] * k + 40, o[1] * k + 40, o[2] * k + 40); }
+      else px(c.x, c.y, o[0] * .45, o[1] * .45, o[2] * .45);
+    } else {
+      let [r, gg, b] = c.green; let k = on ? 1.05 : .8;
+      if (on && Math.sin(t * 2.3 + c.ph * 3) > .985) { r = 255; gg = 255; b = 230; k = 1; }
+      px(c.x, c.y, r * k, gg * k, b * k);
+    }
+  }
+  // star (cell version)
+  if (S.starT > 0) {
+    const sy = TOP - 2, k = lit > 0 ? 1 : .7;
+    [[0,0],[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,-2],[1,1],[-1,1],[1,-1],[-1,-1]].forEach(([dx, dy]) => px(CX + dx, sy + dy, 255 * k, 220 * k, 110 * k));
+  }
+  // gifts: placed (sorted back→front), then floating/held on top
+  [...S.gifts].sort((a, b) => (a.state === 'placed') === (b.state === 'placed') ? a.y - b.y : a.state === 'placed' ? -1 : 1).forEach(drawGift);
+  // snow
+  for (const s of S.snow) px(s.x, s.y, 235, 240, 255);
+  // finale text
+  if (S.stage === 'finale') {
+    const e = now() - S.finaleT;
+    for (const c of TEXT) {
+      if (e < c.li * .12) continue;
+      const red = (c.x + c.y) % 4 < 2;
+      const k = .8 + .2 * Math.sin(t * 5 + c.x * .4);
+      if (c.li < 5) px(c.x, c.y, 255 * k, 215 * k, 110 * k); else red ? px(c.x, c.y, 255 * k, 70, 80) : px(c.x, c.y, 255 * k, 255 * k, 255 * k);
+    }
+  }
+  // particles
+  for (const p of S.parts) { const a = p.life / p.max; px(p.x, p.y, p.c[0] * a + 20, p.c[1] * a + 20, p.c[2] * a + 20); }
+  loCtx.putImageData(img, 0, 0);
+
+  // compose glyph-masked layer
+  tmpCtx.globalCompositeOperation = 'source-over';
+  tmpCtx.clearRect(0, 0, W, TH);
+  tmpCtx.imageSmoothingEnabled = false;
+  tmpCtx.drawImage(lo, 0, 0, W, TH);
+  tmpCtx.globalCompositeOperation = 'destination-in';
+  tmpCtx.drawImage(glyph, 0, 0);
+  tmpCtx.globalCompositeOperation = 'source-over';
+}
+
+function drawCover(src, sw, sh, dx, dy, dw, dh, mirror) {
+  const s = Math.max(dw / sw, dh / sh), cw = dw / s, ch = dh / s;
+  const sx = (sw - cw) / 2, sy = (sh - ch) / 2;
+  ctx.save();
+  if (mirror) { ctx.translate(dx + dw, dy); ctx.scale(-1, 1); ctx.drawImage(src, sx, sy, cw, ch, 0, 0, dw, dh); }
+  else ctx.drawImage(src, sx, sy, cw, ch, dx, dy, dw, dh);
+  ctx.restore();
+  return { s, sx, sy, cw, ch };
+}
+
+function render(t) {
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  // --- top: you ---
+  if (camOK && video.videoWidth) {
+    const vw = video.videoWidth, vh = video.videoHeight;
+    const m = drawCover(video, vw, vh, 0, 0, W, CAM_H, true);
+    // skeleton
+    const res = processHands.last;
+    if (res && res.landmarks) for (const lm of res.landmarks) {
+      const P = lm.map(p => ({ x: W - ((p.x * vw - m.sx) * m.s), y: (p.y * vh - m.sy) * m.s }));
+      ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 2.5; ctx.beginPath();
+      for (const [a, b] of CONN) { ctx.moveTo(P[a].x, P[a].y); ctx.lineTo(P[b].x, P[b].y); }
+      ctx.stroke();
+      for (const p of P) { ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.beginPath(); ctx.arc(p.x, p.y, 4.5, 0, 6.28); ctx.fill(); }
+    }
+  } else {
+    const g = ctx.createLinearGradient(0, 0, 0, CAM_H); g.addColorStop(0, '#1a1c24'); g.addColorStop(1, '#0b0c11');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, CAM_H);
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.font = '22px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(started ? '🖱  鼠标模式：移动 = 手，按住 = 捏合' : '📷', W / 2, CAM_H / 2);
+  }
+  const fade = ctx.createLinearGradient(0, CAM_H - 60, 0, CAM_H);
+  fade.addColorStop(0, 'rgba(5,7,13,0)'); fade.addColorStop(1, 'rgba(5,7,13,.9)');
+  ctx.fillStyle = fade; ctx.fillRect(0, CAM_H - 60, W, 60);
+
+  // --- bottom: the tree ---
+  ctx.fillStyle = '#05070d'; ctx.fillRect(0, TY, W, TH);
+  for (const s of bgStars) {
+    const a = .25 + .75 * (.5 + .5 * Math.sin(t * s.sp + s.ph));
+    ctx.fillStyle = `rgba(255,255,255,${a * .8})`; ctx.fillRect(s.x, s.y, s.s, s.s);
+  }
+  renderTree(t);
+  // glow pass
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.imageSmoothingEnabled = true;
+  ctx.globalAlpha = .28 + S.light * .22;
+  if ('filter' in ctx) ctx.filter = 'blur(10px)';
+  ctx.drawImage(lo, 0, TY, W, TH);
+  ctx.filter = 'none'; ctx.globalAlpha = 1;
+  ctx.restore();
+  ctx.drawImage(tmp, 0, TY);
+
+  // star glow
+  if (S.starT > 0) {
+    const e = t - S.starT, pop = Math.min(1, e * 2.5), k = (S.light > 0 ? 1 : .6) * pop;
+    const sx = CX * CELL + CELL / 2, sy = TY + (TOP - 2) * CELL + CELL / 2;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const rg = ctx.createRadialGradient(sx, sy, 0, sx, sy, 90 * k);
+    rg.addColorStop(0, `rgba(255,235,170,${.85 * k})`); rg.addColorStop(.25, `rgba(255,200,90,${.35 * k})`); rg.addColorStop(1, 'rgba(255,200,90,0)');
+    ctx.fillStyle = rg; ctx.fillRect(sx - 100, sy - 100, 200, 200);
+    ctx.strokeStyle = `rgba(255,230,160,${.7 * k})`; ctx.lineWidth = 1.2;
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4 + t * .15, L = (i % 2 ? 40 : 95) * k * (.85 + .15 * Math.sin(t * 3 + i));
+      ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + Math.cos(a) * L, sy + Math.sin(a) * L); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // hand cursors over the tree
+  for (const h of hands) {
+    const x = h.x * CELL, y = TY + h.y * CELL, r = h.pinch ? 14 : 22;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const rg = ctx.createRadialGradient(x, y, 0, x, y, r * 2.2);
+    rg.addColorStop(0, h.pinch ? 'rgba(255,220,120,.9)' : 'rgba(200,255,220,.55)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(x, y, r * 2.2, 0, 6.28); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.28); ctx.stroke();
+    ctx.restore();
+  }
+  // growth meter during grow stage
+  if (S.stage === 'grow' && started) {
+    ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(60, H - 18, W - 120, 4);
+    ctx.fillStyle = '#7dffa8'; ctx.fillRect(60, H - 18, (W - 120) * S.grow, 4);
+  }
+}
+
+// ---------- loop ----------
+let lastT = now();
+function frame() {
+  const t = now(), dt = Math.min(.05, t - lastT); lastT = t;
+  processHands(t, dt);
+  if (started) update(t, dt);
+  render(t);
+  if (recorder) document.getElementById('rec').textContent = '■ 停止 ' + fmt(t - recStart);
+  requestAnimationFrame(frame);
+}
+function fmt(s) { s = Math.floor(s); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }
+
+// ---------- recording ----------
+let recorder = null, recChunks = [], recStart = 0;
+function pickMime() {
+  const c = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+  return c.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+}
+function startRec() {
+  if (!window.MediaRecorder) { toast('这个浏览器不支持录制，请用 Chrome / Safari 最新版'); return; }
+  initAudio();
+  const stream = view.captureStream(30);
+  recDest.stream.getAudioTracks().forEach(tr => stream.addTrack(tr));
+  const mime = pickMime();
+  recorder = new MediaRecorder(stream, { mimeType: mime || undefined, videoBitsPerSecond: 8_000_000 });
+  recChunks = [];
+  recorder.ondataavailable = e => e.data.size && recChunks.push(e.data);
+  recorder.onstop = () => {
+    const type = recorder.mimeType || mime || 'video/webm';
+    const blob = new Blob(recChunks, { type });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'xmas-tree.' + (type.includes('mp4') ? 'mp4' : 'webm');
+    document.body.appendChild(a); a.click(); a.remove();
+    recorder = null; document.getElementById('rec').textContent = '● 录制视频'; document.getElementById('rec').classList.remove('on');
+    toast('视频已保存 🎬');
+  };
+  // every take starts from an empty scene with the song at 0:00
+  resetScene(); playMusic(true);
+  recorder.start(500); recStart = now();
+  document.getElementById('rec').classList.add('on');
+}
+document.getElementById('rec').addEventListener('click', () => {
+  if (!started) { toast('先点「开始」打开摄像头'); return; }
+  recorder ? recorder.stop() : startRec();
+});
+
+// ---------- controls ----------
+async function begin() {
+  document.getElementById('start').disabled = true;
+  initAudio(); actx.resume();
+  await initTracking();
+  document.getElementById('intro').classList.add('hidden');
+  started = true; resetScene(); playMusic(true);
+}
+document.getElementById('start').addEventListener('click', begin);
+document.getElementById('reset').addEventListener('click', () => { resetScene(); if (started) playMusic(true); });
+document.getElementById('hintBtn').addEventListener('click', e => {
+  hintsOn = !hintsOn; e.target.textContent = hintsOn ? '提示 开' : '提示 关'; setHint();
+});
+// keyboard backup for filming: Space = push the show forward
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') {
+    e.preventDefault(); if (!started) return;
+    const st = S.stage;
+    if (st === 'grow') S.grow = 1;
+    else if (st === 'light') { S.lightT = now(); sfx.lights(); go('lighting'); }
+    else if (st === 'gifts') spawnGift(rand(10, COLS - 10), rand(25, 60));
+    else if (st === 'place') { let k = 0; for (const g of S.gifts) if (g.state === 'float') dropGift(g, (k++) * .14); }
+  }
+  if (e.key === 'r' || e.key === 'R') { resetScene(); if (started) playMusic(true); }
+});
+
+resetScene();
+requestAnimationFrame(frame);
+window.__xmas = { get S() { return S; }, get hands() { return hands; } }; // for debugging
+</script>
+</body>
+</html>
