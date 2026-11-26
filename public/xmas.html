@@ -153,35 +153,61 @@ for (let i = 0; i < 5; i++) {
   const top = TOP + i * TREE_H * 0.17, th = TREE_H * 0.32;
   tiers.push({ top, bot: top + th, th, hw: 9 + i * 7 });
 }
-const ORN_COLORS = [[255, 70, 80], [255, 205, 80], [80, 150, 255], [220, 90, 255], [60, 230, 220], [255, 140, 60]];
-const treeCells = [];
+const treeCells = [], treeSet = new Set();
 for (let y = TOP - 1; y <= BASE; y++) for (let x = 0; x < COLS; x++) {
-  let inside = false, garland = false, tier = -1;
-  for (let i = 0; i < tiers.length; i++) {
-    const T = tiers[i];
+  let inside = false;
+  for (const T of tiers) {
     if (y < T.top || y > T.bot) continue;
     const f = (y - T.top) / T.th;
-    const jag = (Math.floor(y) % 2 === 0 ? 1 : 0) * (f > .55 ? 1.2 : 0);
-    const half = T.hw * f + 0.6 + jag * hash(x, y) ;
-    if (Math.abs(x - CX) <= half) {
-      inside = true; tier = i;
-      const u = (x - CX) / Math.max(T.hw, 1);
-      const ys = T.top + T.th * (0.5 + 0.28 * (1 - u * u)) ;
-      if (Math.abs(y - ys) < 0.6 && f > .3) garland = true;
-    }
+    const jag = (Math.floor(y) % 2 === 0 ? 1 : 0) * (f > .55 ? 1.2 : 0);   // drooping branch tips
+    if (Math.abs(x - CX) <= T.hw * f + 0.6 + jag * hash(x, y)) inside = true;
   }
   if (!inside) continue;
-  const t = (y - TOP) / TREE_H;
-  const n = hash(x, y);
-  const orn = !garland && hash(y, x + 77) < 0.075;
+  const t = (y - TOP) / TREE_H, n = hash(x, y), u = y - TOP, dx = x - CX;
+  // two families of diagonal bead chains that cross each other, beads on every other cell
+  const near = (v) => { const m = ((v % 11) + 11) % 11; return m < .6 || m > 10.4; };
+  const garland = t > .08 && (near(u - .45 * dx) || near(u + .45 * dx - 5.5));
   treeCells.push({
-    x, y, t, garland, orn,
-    green: [25 + n * 45, 120 + n * 95 + (1 - t) * 20, 60 + n * 60 + (hash(x + 3, y) < .15 ? 70 : 0)],
-    oc: ORN_COLORS[Math.floor(hash(x + 11, y + 5) * ORN_COLORS.length)],
+    x, y, t, garland,
+    green: [12 + n * 30, 80 + n * 75 + (1 - t) * 15 + (hash(x + 3, y) < .12 ? 45 : 0), 30 + n * 35],
     ph: hash(x + 1, y + 2) * 6.28,
     jit: hash(x + 9, y + 9),
   });
+  treeSet.add(x + ',' + y);
 }
+// decorations: deterministic layout so every take looks the same
+const DECOR = new Map();   // "x,y" -> { kind, part, grp, ph }
+(function placeDecor() {
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const SHAPES = {
+    red:  { n: 16, cells: [[0,-1,'b'],[-1,0,'b'],[0,0,'b'],[1,0,'b'],[0,1,'b'],[-1,-1,'h'],[1,-1,'b'],[-1,1,'b'],[1,1,'d']] },
+    gold: { n: 12, cells: [[0,0,'b'],[1,0,'b'],[0,1,'b'],[1,1,'d'],[0,-1,'h']] },
+    star: { n: 10, cells: [[0,0,'b'],[0,-1,'b'],[-1,0,'b'],[1,0,'b'],[-1,1,'b'],[1,1,'b']] },
+    bow:  { n: 7,  cells: [[-1,-1,'b'],[1,-1,'b'],[0,0,'d'],[-1,1,'b'],[1,1,'b'],[-1,0,'b'],[1,0,'b']] },
+  };
+  const placed = [];
+  for (const [kind, sh] of Object.entries(SHAPES)) {
+    let made = 0, tries = 0;
+    while (made < sh.n && tries++ < 4000) {
+      const x = Math.round(CX + (rnd() * 2 - 1) * 34), y = Math.round(TOP + 5 + rnd() * (TREE_H - 8));
+      // fully inside the tree, with a margin, and not crowding another ornament
+      const ok = [[-2,-2],[2,-2],[-2,2],[2,2],[0,-2],[0,2]].every(([a, b]) => treeSet.has((x + a) + ',' + (y + b)))
+        && placed.every(([px2, py2]) => Math.abs(px2 - x) + Math.abs(py2 - y) > 6);
+      if (!ok) continue;
+      placed.push([x, y]); made++;
+      const grp = made % 2, ph = rnd() * 6.28;
+      for (const [cx2, cy2, part] of sh.cells) DECOR.set((x + cx2) + ',' + (y + cy2), { kind, part, grp, ph });
+    }
+  }
+})();
+const DECOR_COL = {
+  red:  { b: [215, 25, 35], h: [255, 175, 165], d: [140, 15, 25] },
+  gold: { b: [240, 185, 55], h: [255, 245, 190], d: [180, 125, 30] },
+  star: { b: [255, 215, 80], h: [255, 245, 190], d: [255, 215, 80] },
+  bow:  { b: [225, 30, 40], h: [255, 120, 120], d: [150, 15, 25] },
+};
+// five-point star topper
+const TOPPER = ['....y....', '...yyy...', 'yyyyyyyyy', '.yyyyyyy.', '..yyyyy..', '..yy.yy..', '.yy...yy.'];
 const bgStars = Array.from({ length: 170 }, () => ({ x: rand(0, W), y: rand(TY + 4, TY + TH * 0.86), s: Math.random() < .12 ? 2.4 : 1.4, ph: rand(0, 6.28), sp: rand(.6, 2.2) }));
 
 // pixel font for the finale text
@@ -204,7 +230,7 @@ function textCells(str, y0) {
   })));
   return out;
 }
-const TEXT = [...textCells('MERRY', 3).map(c => ({ ...c, li: c.li })), ...textCells('CHRISTMAS', 12).map(c => ({ ...c, li: c.li + 5 }))];
+const TEXT = [...textCells('MERRY', 1).map(c => ({ ...c, li: c.li })), ...textCells('CHRISTMAS', 9).map(c => ({ ...c, li: c.li + 5 }))];
 
 // ---------- scene state ----------
 let S;
@@ -417,61 +443,87 @@ function updateBeat(t, dt) {
 }
 
 // ---------- Santa (front view, sack of gifts on his left) ----------
+// 3/4 view: sack over his shoulder (viewer's left), free arm on the right is drawn separately so it can wave
 const SANTA = [
-  '....rrrrrr..........',
-  '...rrrrrrrrrrp......',
-  '..wwwwwwwwww........',
-  '..ssssssssss........',
-  '..sssessesss........',
-  '..ssssnnssss........',
-  '..swwwwwwwws........',
-  '.wwwwwwwwwwww.......',
-  '.rwwwwwwwwwwr...bbb.',
-  '..rwwwwwwwwrrr.bbbbb',
-  '..rrwwwwwwrrrr.bbbbb',
-  '..rrrwwwwrrrrrbbbbbb',
-  '..rrrrrrrrrrrwbbbbbb',
-  '.kkkkkkgkkkkk.bbbbbb',
-  '.rrrrrrrrrrrr.bbbbbb',
-  '.rrrrrwwrrrrr..bbbb.',
-  '.wwwwwwwwwwww.......',
+  '..............rrrrrr............',
+  '...........rrrrrrrrrrR..........',
+  '.........rrrrrrrrrrrrrR.........',
+  '........rrrrrrrrrrrrrrrR........',
+  '.......ww...wwwwwwwwwwwwww......',
+  '......wwww.wwwwwwwwwwwwwwww.....',
+  '......wwww..sssssssssssss.......',
+  '.......ww..sssesssssssesss......',
+  '...........ssesesssssesess......',
+  '....bbbb...scccsssnnsscccs......',
+  '..bbbbbbbbwwwwwwwwwwwwwwwww.....',
+  '.bbbbbbbbbwwwwwwmwwwmwwwwww.....',
+  'bbbbbbbbbbbwwwwwwmmmwwwwwwww....',
+  'bbbbbbbbbbbbwwwwwwwwwwwwwwww....',
+  'bbbbbbbbbbbbbwwwwwwwwwwwwwrr....',
+  'bbbbbbbbbbbbggwwwwwwwwwwwrrr....',
+  'Bbbbbbbbbbbgggrwwwwwwwwwwrrr....',
+  'BBbbbbbbbbbgggrrwwwwwwwwrrrr....',
+  'BBBbbbbbbbbbggrrrwwwwwwrrrrr....',
+  '.BBBbbbbbbbbbwwrrrwwwwrrrrrr....',
+  '..BBBbbbbbbbwwwrrrrwwrrrrrrr....',
+  '...BBBBbbbbbbbrrrrrwwrrrrrrr....',
+  '.....BBBBbbbbrrrrrrwwrrrrrrR....',
+  '........BBBbbrrrrrrwwrrrrrrR....',
+  '...........bbrrrrrrwwrrrrrrR....',
+  '...........kkkkkkkyyyykkkkkk....',
+  '...........kkkkkkkykkykkkkkk....',
+  '...........kkkkkkkyyyykkkkkk....',
+  '...........rrrrrrrrwwrrrrrrR....',
+  '...........rrrrrrrrwwrrrrrrR....',
+  '..........wwwwwwwwwwwwwwwwwww...',
+  '..........wwwwwwwwwwwwwwwwwww...',
+  '............rrrrrr...rrrrrr.....',
+  '............rrrrrR...rrrrrR.....',
+  '............rrrrrR...rrrrrR.....',
+  '...........wwwwwww...wwwwwww....',
+  '...........ooooooo...ooooooo....',
+  '..........oooooooo...oooooooo...',
+  '..........oooooooo...ooooooooo..',
 ];
-const SANTA_LEGS = [
-  ['..rrrr...rrrr.......', '..rrrr...rrrr.......', '.kkkkk..kkkkk.......'],
-  ['..rrrr..rrrr........', '.rrrr.....rrrr......', 'kkkkk......kkkk.....'],
-];
-// his right arm (viewer's left): hanging, and two waving poses
-const ARM_DOWN = [[0, 9, 'r'], [1, 9, 'r'], [0, 10, 'r'], [1, 10, 'r'], [0, 11, 'r'], [1, 11, 'r'], [0, 12, 'w'], [1, 12, 'w']];
-const ARM_WAVE = [
-  // arm raised out to the side, hand tilted outward
-  [[1, 9, 'r'], [0, 9, 'r'], [0, 8, 'r'], [-1, 8, 'r'], [-1, 7, 'r'], [-2, 7, 'r'], [-2, 6, 'r'], [-3, 6, 'r'], [-3, 5, 'r'], [-4, 5, 'r'],
-   [-4, 4, 'w'], [-5, 4, 'w'], [-4, 3, 'w'], [-5, 3, 'w'], [-5, 2, 'w'], [-6, 2, 'w']],
-  // arm straight up, hand tilted inward
-  [[1, 9, 'r'], [0, 9, 'r'], [0, 8, 'r'], [-1, 8, 'r'], [-1, 7, 'r'], [-2, 7, 'r'], [-2, 6, 'r'], [-2, 5, 'r'], [-1, 6, 'r'], [-1, 5, 'r'],
-   [-2, 4, 'w'], [-1, 4, 'w'], [-2, 3, 'w'], [-1, 3, 'w'], [-1, 2, 'w'], [0, 2, 'w']],
-];
-const SANTA_X = 41, SANTA_BOTTOM = 82, DS = 2; // DS = cells per sprite pixel
-const SANTA_COL = { r: [225, 30, 45], w: [250, 250, 250], s: [255, 200, 170], n: [255, 140, 130], k: [25, 20, 25], g: [255, 210, 80], b: [150, 95, 50], p: [255, 255, 255] };
+const SANTA_X = 44, SANTA_BOTTOM = 82, LEG_ROW = 32;
+const SANTA_COL = { r: [215, 55, 45], R: [160, 35, 30], w: [245, 238, 220], s: [250, 205, 175], c: [240, 140, 120], n: [235, 150, 130],
+  e: [90, 50, 40], m: [110, 40, 40], b: [150, 95, 55], B: [110, 65, 35], g: [95, 55, 35], k: [80, 45, 30], y: [235, 185, 70], o: [100, 60, 35] };
+// free arm: hanging at his side, or raised from the shoulder to a waving hand at (hx, hy)
+const ARM_DOWN = [];
+for (let y = 14; y < 24; y++) for (const x of [28, 29, 30]) ARM_DOWN.push([x, y, x === 30 ? 'R' : 'r']);
+for (const x of [28, 29, 30]) ARM_DOWN.push([x, 24, 'w']);
+for (let y = 25; y < 28; y++) for (const x of [28, 29, 30]) ARM_DOWN.push([x, y, 'g']);
+function armUp(hx, hy) {
+  const m = new Map(), sx = 28.5, sy = 15.5, put = (x, y, ch) => m.set(x + ',' + y, [x, y, ch]);
+  for (let i = 0; i <= 24; i++) {
+    const t = i / 24 * .78, x = sx + (hx - sx) * t, y = sy + (hy - sy) * t;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) put(Math.round(x + dx), Math.round(y + dy), t > .66 ? 'w' : 'r');
+  }
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx * dx + dy * dy < 2.5) put(hx + dx, hy + dy, 'g');
+  put(hx + (hx > 32 ? 1 : -1), hy - 2, 'g');  // thumb
+  return [...m.values()];
+}
+const ARM_WAVE = [armUp(35, 5), armUp(31, 3)];
 function drawSanta(t) {
   const d = S.santa; if (!d) return;
   const walking = Math.abs(d.x - d.tx) > .05;
-  const legs = SANTA_LEGS[walking ? Math.floor(t / .16) % 2 : 0];
+  const step = walking ? Math.floor(t / .16) % 2 : 0;
   const waving = S.stage === 'bye' && !walking;
   const arm = waving ? ARM_WAVE[Math.floor(t / .22) % 2] : ARM_DOWN;
   const bob = walking ? Math.abs(Math.sin(t * 9.8)) * 1.5 : (beat.pulse > .5 ? 1 : 0);  // bounces to the beat when standing
-  const rows = SANTA.length + legs.length;
-  const x0 = Math.round(d.x), y0 = Math.round(SANTA_BOTTOM - rows * DS + 1 - bob);
+  const x0 = Math.round(d.x), y0 = Math.round(SANTA_BOTTOM - SANTA.length + 1 - bob);
   const pix = [];
-  SANTA.forEach((row, ry) => [...row].forEach((ch, rx) => ch !== '.' && pix.push([rx, ry, ch])));
-  legs.forEach((row, ry) => [...row].forEach((ch, rx) => ch !== '.' && pix.push([rx, ry + SANTA.length, ch])));
+  SANTA.forEach((row, ry) => [...row].forEach((ch, rx) => {
+    if (ch === '.') return;
+    const sh = ry >= LEG_ROW && step ? (rx < 20 ? -1 : 1) : 0;  // legs swing while walking
+    pix.push([rx + sh, ry, ch]);
+  }));
   arm.forEach(a => pix.push(a));
   // pass 0: dark outline so Santa separates from the tree; pass 1: Santa himself
   for (let pass = 0; pass < 2; pass++) for (const [rx, ry, ch] of pix) {
-    const bx = x0 + rx * DS, by = y0 + ry * DS;
-    if (pass === 0) { for (let dy = -1; dy <= DS; dy++) for (let dx = -1; dx <= DS; dx++) px(bx + dx, by + dy, 6, 8, 14); continue; }
-    if (ch === 'e') continue;
-    const c = SANTA_COL[ch];
-    for (let dy = 0; dy < DS; dy++) for (let dx = 0; dx < DS; dx++) px(bx + dx, by + dy, ...c);
+    const bx = x0 + rx, by = y0 + ry;
+    if (pass === 0) { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) px(bx + dx, by + dy, 6, 8, 14); continue; }
+    px(bx, by, ...SANTA_COL[ch]);
   }
 }
 function summonSanta(t) {
@@ -516,7 +568,7 @@ function update(t, dt) {
       // gifts fly out of the sack one by one
       if (t - d.arrived > 1 && d.popped < MAX_GIFTS && t > d.nextPop) {
         d.popped++; d.nextPop = t + .32;
-        spawnGift(d.x + 34, SANTA_BOTTOM - 26, rand(-26, -8), rand(-22, -12));
+        spawnGift(d.x + 5, SANTA_BOTTOM - 31, rand(-22, -4), rand(-24, -14));  // out of the sack
       }
       if (d.popped >= MAX_GIFTS && t - d.nextPop > .8) go('place');
     }
@@ -586,7 +638,7 @@ function renderTree(t) {
     for (let x = 0; x < COLS; x++) if ((x + y * 3) % 9 < 6) px(x, y, 200 * a, 165 * a, 80 * a);
   }
   // trunk
-  if (S.grow > 0.01) for (let y = BASE - 1; y <= BASE + 3; y++) for (let x = CX - 3; x <= CX + 3; x++) px(x, y, 150, 75, 40);
+  if (S.grow > 0.01) for (let y = BASE - 1; y <= BASE + 3; y++) for (let x = CX - 3; x <= CX + 3; x++) px(x, y, 120, 70, 40);
   // tree cells
   const g = S.grow;
   for (const c of treeCells) {
@@ -596,27 +648,37 @@ function renderTree(t) {
     const edge = reveal - fromBottom < .035 && g < 1;
     if (edge) { px(c.x, c.y, 230, 255, 230); continue; }
     const on = lit > 0 && c.t <= lit * 1.15;
-    if (c.garland) {
-      if (on) { const [r, gg, b] = hsl(c.x * 9 + c.y * 4 - t * 140 + beat.count * 47, .95, .55 + .2 * beat.pulse); px(c.x, c.y, r, gg, b); }
-      else px(c.x, c.y, 150, 150, 120);
-    } else if (c.orn) {
-      const o = c.oc;
+    const dec = DECOR.get(c.x + ',' + c.y);
+    if (dec) {
+      const col = DECOR_COL[dec.kind][dec.part];
+      let k = .45;
       if (on) {
-        // with music: half the baubles flash on even beats, the other half on odd beats
-        const k = beat.active ? ((c.jit < .5) === (beat.count % 2 === 0) ? .5 + .7 * beat.pulse : .45) : .55 + .45 * Math.sin(t * 4 + c.ph);
-        px(c.x, c.y, Math.min(255, o[0] * k + 40), Math.min(255, o[1] * k + 40), Math.min(255, o[2] * k + 40));
+        // with music: ornaments split into two groups that flash on alternate beats
+        k = beat.active ? (dec.grp === beat.count % 2 ? .8 + .45 * beat.pulse : .8) : .85 + .2 * Math.sin(t * 3 + dec.ph);
+        if (dec.kind === 'star' && Math.sin(t * 2 + dec.ph * 5) > .93) k = 1.4;   // little stars glint
       }
-      else px(c.x, c.y, o[0] * .45, o[1] * .45, o[2] * .45);
+      px(c.x, c.y, Math.min(255, col[0] * k), Math.min(255, col[1] * k), Math.min(255, col[2] * k));
+    } else if (c.garland) {
+      if (on) {
+        // gold beads: a shimmer runs along the chains, alternate beads pop on the beat
+        const bead = c.x % 2 === 0 ? 1 : .72;   // alternating bright/dim beads read as a chain
+        const k = bead * (.8 + .2 * Math.sin(c.x * .7 + c.y * .3 - t * 5)) + (beat.active && ((c.x >> 1) % 2 === beat.count % 2) ? .35 * beat.pulse : 0);
+        px(c.x, c.y, Math.min(255, 255 * k), Math.min(255, 205 * k), Math.min(255, 90 * k));
+      } else px(c.x, c.y, 165, 130, 55);
     } else {
-      let [r, gg, b] = c.green; let k = on ? 1.05 + .18 * beat.pulse : .8;
-      if (on && Math.sin(t * 2.3 + c.ph * 3) > .985) { r = 255; gg = 255; b = 230; k = 1; }
+      let [r, gg, b] = c.green; let k = on ? 1.05 + .15 * beat.pulse : .8;
+      if (on && Math.sin(t * 2.3 + c.ph * 3) > .99) { r = 255; gg = 250; b = 220; k = 1; }
       px(c.x, c.y, r * k, gg * k, b * k);
     }
   }
-  // star (cell version)
+  // gold star topper
   if (S.starT > 0) {
-    const sy = TOP - 2, k = lit > 0 ? 1 : .7;
-    [[0,0],[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,-2],[1,1],[-1,1],[1,-1],[-1,-1]].forEach(([dx, dy]) => px(CX + dx, sy + dy, 255 * k, 220 * k, 110 * k));
+    const k = lit > 0 ? 1 + .2 * beat.pulse : .75, y0 = TOP - 7;
+    TOPPER.forEach((row, ry) => [...row].forEach((ch, rx) => {
+      if (ch !== 'y') return;
+      const shade = rx > 4 || ry > 3 ? [225, 160, 35] : [255, 225, 110];
+      px(CX - 4 + rx, y0 + ry, Math.min(255, shade[0] * k), Math.min(255, shade[1] * k), Math.min(255, shade[2] * k));
+    }));
   }
   drawSanta(t);
   // gifts: placed (sorted back→front), then floating/held on top
@@ -703,10 +765,10 @@ function render(t) {
   // star glow
   if (S.starT > 0) {
     const e = t - S.starT, pop = Math.min(1, e * 2.5), k = (S.light > 0 ? 1 + .45 * beat.pulse : .6) * pop;
-    const sx = CX * CELL + CELL / 2, sy = TY + (TOP - 2) * CELL + CELL / 2;
+    const sx = CX * CELL + CELL / 2, sy = TY + (TOP - 4) * CELL + CELL / 2;
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     const rg = ctx.createRadialGradient(sx, sy, 0, sx, sy, 90 * k);
-    rg.addColorStop(0, `rgba(255,235,170,${.85 * k})`); rg.addColorStop(.25, `rgba(255,200,90,${.35 * k})`); rg.addColorStop(1, 'rgba(255,200,90,0)');
+    rg.addColorStop(0, `rgba(255,235,170,${.45 * k})`); rg.addColorStop(.3, `rgba(255,200,90,${.22 * k})`); rg.addColorStop(1, 'rgba(255,200,90,0)');
     ctx.fillStyle = rg; ctx.fillRect(sx - 140, sy - 140, 280, 280);
     ctx.strokeStyle = `rgba(255,230,160,${.7 * k})`; ctx.lineWidth = 1.2;
     for (let i = 0; i < 8; i++) {

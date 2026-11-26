@@ -72,7 +72,7 @@ npm run dev      # http://localhost:3000
 
 ## 🎄 手势圣诞树 (`public/xmas.html`)
 
-摄像头 + 手势跳舞，生成一棵像素点阵的圣诞树，可以直接录成竖屏视频。
+摄像头 + 手势跳舞，生成一棵像素点阵的圣诞树（经典墨绿松树、交叉的金色珠链、红金彩球、小金星、红蝴蝶结、顶上一颗金色五角星），可以直接录成竖屏视频。
 
 打开：`npm run dev` 后访问 http://localhost:3000/xmas.html （部署到 Vercel 后就是 `https://你的域名/xmas.html`，需要 HTTPS 才能用摄像头）。
 
