@@ -232,7 +232,9 @@ function go(stage) { S.stage = stage; S.stageT = now(); setHint(); }
 function now() { return performance.now() / 1000; }
 
 // ---------- audio ----------
-let actx = null, master = null, recDest = null, musicNode = null;
+let actx = null, master = null, recDest = null, musicNode = null, analyser = null, freq = null;
+// beat tracker: pulse jumps to 1 on each kick/bass hit and decays; count advances per beat
+const beat = { pulse: 0, count: 0, last: -9, avg: 0, prev: 0, active: false };
 function initAudio() {
   if (actx) return;
   actx = new (window.AudioContext || window.webkitAudioContext)();
@@ -240,7 +242,11 @@ function initAudio() {
   master.connect(actx.destination);
   recDest = actx.createMediaStreamDestination();
   master.connect(recDest);
-  try { musicNode = actx.createMediaElementSource(music); musicNode.connect(master); } catch (e) { console.warn(e); }
+  try {
+    musicNode = actx.createMediaElementSource(music); musicNode.connect(master);
+    analyser = actx.createAnalyser(); analyser.fftSize = 1024; analyser.smoothingTimeConstant = .5;
+    musicNode.connect(analyser); freq = new Uint8Array(analyser.frequencyBinCount);
+  } catch (e) { console.warn(e); }
 }
 function tone(freq, dur = .4, type = 'sine', vol = .18, delay = 0) {
   if (!actx) return;
@@ -390,6 +396,67 @@ function drawGift(g) {
 }
 
 // ---------- update ----------
+function updateBeat(t, dt) {
+  beat.pulse *= Math.exp(-dt / .18);
+  if (!analyser || music.paused) { beat.active = false; return; }
+  analyser.getByteFrequencyData(freq);
+  const hz = actx.sampleRate / analyser.fftSize;
+  const lo0 = Math.max(1, Math.floor(40 / hz)), hi0 = Math.ceil(160 / hz);
+  let e = 0; for (let i = lo0; i <= hi0; i++) e += freq[i]; e /= (hi0 - lo0 + 1);
+  beat.avg += (e - beat.avg) * (1 - Math.exp(-dt / .9));
+  if (e > beat.avg * 1.18 + 4 && e > 70 && e >= beat.prev && t - beat.last > .26) {
+    beat.last = t; beat.count++; beat.pulse = 1;
+  }
+  beat.prev = e;
+  beat.active = t - beat.last < 2.5;
+}
+
+// ---------- reindeer (faces left, toward the tree) ----------
+const DEER_TOP = [
+  '..a..a..........',
+  '..a.aa.a........',
+  '...aa.aa........',
+  '....aa..........',
+  '...###..........',
+  '..#e##..........',
+  'n####...........',
+  '...###..........',
+  '....###.........',
+];
+const DEER_BODY = [
+  '....#####t......',
+  '....##########..',
+  '....###w#w####..',
+  '....##########..',
+  '.....########...',
+];
+const DEER_LEGS = [
+  ['.....#.#....#.#.', '.....#.#....#.#.', '.....#.#....#.#.', '.....h.h....h.h.'],
+  ['.....##.....##..', '....#..#...#..#.', '....#..#...#..#.', '...h....h.h....h'],
+];
+const DEER_X = 46, DEER_BOTTOM = 82, DS = 2; // DS = cells per sprite pixel
+function drawDeer(t) {
+  const d = S.deer; if (!d) return;
+  const walking = d.x > DEER_X + .05;
+  const legs = DEER_LEGS[walking ? Math.floor(t / .16) % 2 : 0];
+  const nod = !walking && beat.pulse > .45 ? 1 : 0;           // nods to the beat
+  const hop = walking ? Math.abs(Math.sin(t * 9.8)) * 1.5 : 0;
+  const rows = DEER_TOP.length + DEER_BODY.length + legs.length;
+  const x0 = Math.round(d.x), y0 = Math.round(DEER_BOTTOM - rows * DS + 1 - hop);
+  const body = [242, 238, 230], ant = [215, 175, 115], hoof = [150, 120, 90];
+  const nose = beat.active ? [255, 60 + 150 * (1 - beat.pulse), 70] : [255, 90, 90];
+  const parts = [[DEER_BODY, DEER_TOP.length], [legs, DEER_TOP.length + DEER_BODY.length], [DEER_TOP, nod / DS]];
+  // pass 0: dark outline so the deer separates from the tree; pass 1: the deer itself
+  for (let pass = 0; pass < 2; pass++) for (const [rowsArr, oy] of parts) rowsArr.forEach((row, ry) => [...row].forEach((ch, rx) => {
+    if (ch === '.') return;
+    const bx = x0 + rx * DS, by = y0 + Math.round((oy + ry) * DS);
+    if (pass === 0) { for (let dy = -1; dy <= DS; dy++) for (let dx = -1; dx <= DS; dx++) px(bx + dx, by + dy, 6, 8, 14); return; }
+    if (ch === 'e') return;
+    const c = ch === '#' || ch === 't' ? body : ch === 'a' ? ant : ch === 'w' ? [255, 255, 255] : ch === 'n' ? nose : ch === 'h' ? hoof : body;
+    for (let dy = 0; dy < DS; dy++) for (let dx = 0; dx < DS; dx++) px(bx + dx, by + dy, ...c);
+  }));
+}
+
 function update(t, dt) {
   const st = S.stage;
   // sparkle trails from every hand
@@ -418,6 +485,7 @@ function update(t, dt) {
     S.light = clamp((t - S.lightT) / 2.6, 0, 1);
     if (S.light >= 1 && t - S.lightT > 3.4) go('gifts');
   } else if (st === 'gifts') {
+    if (!S.deer) { S.deer = { x: COLS + 2 }; sfx.chime(); }
     const both = hands.length >= 2;
     for (const h of hands) {
       const cd = both ? .42 : .9, last = S.lastSpawn[h.key] || 0;
@@ -447,6 +515,7 @@ function update(t, dt) {
     }
   }
 
+  if (S.deer && S.deer.x > DEER_X) S.deer.x = Math.max(DEER_X, S.deer.x - 7 * dt);
   // gifts physics
   for (const g of S.gifts) {
     if (g.state === 'float') {
@@ -499,14 +568,18 @@ function renderTree(t) {
     if (edge) { px(c.x, c.y, 230, 255, 230); continue; }
     const on = lit > 0 && c.t <= lit * 1.15;
     if (c.garland) {
-      if (on) { const [r, gg, b] = hsl(c.x * 9 + c.y * 4 - t * 140, .95, .62); px(c.x, c.y, r, gg, b); }
+      if (on) { const [r, gg, b] = hsl(c.x * 9 + c.y * 4 - t * 140 + beat.count * 47, .95, .55 + .2 * beat.pulse); px(c.x, c.y, r, gg, b); }
       else px(c.x, c.y, 150, 150, 120);
     } else if (c.orn) {
       const o = c.oc;
-      if (on) { const k = .55 + .45 * Math.sin(t * 4 + c.ph); px(c.x, c.y, o[0] * k + 40, o[1] * k + 40, o[2] * k + 40); }
+      if (on) {
+        // with music: half the baubles flash on even beats, the other half on odd beats
+        const k = beat.active ? ((c.jit < .5) === (beat.count % 2 === 0) ? .5 + .7 * beat.pulse : .45) : .55 + .45 * Math.sin(t * 4 + c.ph);
+        px(c.x, c.y, Math.min(255, o[0] * k + 40), Math.min(255, o[1] * k + 40), Math.min(255, o[2] * k + 40));
+      }
       else px(c.x, c.y, o[0] * .45, o[1] * .45, o[2] * .45);
     } else {
-      let [r, gg, b] = c.green; let k = on ? 1.05 : .8;
+      let [r, gg, b] = c.green; let k = on ? 1.05 + .18 * beat.pulse : .8;
       if (on && Math.sin(t * 2.3 + c.ph * 3) > .985) { r = 255; gg = 255; b = 230; k = 1; }
       px(c.x, c.y, r * k, gg * k, b * k);
     }
@@ -516,6 +589,7 @@ function renderTree(t) {
     const sy = TOP - 2, k = lit > 0 ? 1 : .7;
     [[0,0],[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,-2],[1,1],[-1,1],[1,-1],[-1,-1]].forEach(([dx, dy]) => px(CX + dx, sy + dy, 255 * k, 220 * k, 110 * k));
   }
+  drawDeer(t);
   // gifts: placed (sorted back→front), then floating/held on top
   [...S.gifts].sort((a, b) => (a.state === 'placed') === (b.state === 'placed') ? a.y - b.y : a.state === 'placed' ? -1 : 1).forEach(drawGift);
   // snow
@@ -590,7 +664,7 @@ function render(t) {
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   ctx.imageSmoothingEnabled = true;
-  ctx.globalAlpha = .28 + S.light * .22;
+  ctx.globalAlpha = Math.min(1, .28 + S.light * (.22 + .35 * beat.pulse));
   if ('filter' in ctx) ctx.filter = 'blur(10px)';
   ctx.drawImage(lo, 0, TY, W, TH);
   ctx.filter = 'none'; ctx.globalAlpha = 1;
@@ -599,12 +673,12 @@ function render(t) {
 
   // star glow
   if (S.starT > 0) {
-    const e = t - S.starT, pop = Math.min(1, e * 2.5), k = (S.light > 0 ? 1 : .6) * pop;
+    const e = t - S.starT, pop = Math.min(1, e * 2.5), k = (S.light > 0 ? 1 + .45 * beat.pulse : .6) * pop;
     const sx = CX * CELL + CELL / 2, sy = TY + (TOP - 2) * CELL + CELL / 2;
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     const rg = ctx.createRadialGradient(sx, sy, 0, sx, sy, 90 * k);
     rg.addColorStop(0, `rgba(255,235,170,${.85 * k})`); rg.addColorStop(.25, `rgba(255,200,90,${.35 * k})`); rg.addColorStop(1, 'rgba(255,200,90,0)');
-    ctx.fillStyle = rg; ctx.fillRect(sx - 100, sy - 100, 200, 200);
+    ctx.fillStyle = rg; ctx.fillRect(sx - 140, sy - 140, 280, 280);
     ctx.strokeStyle = `rgba(255,230,160,${.7 * k})`; ctx.lineWidth = 1.2;
     for (let i = 0; i < 8; i++) {
       const a = i * Math.PI / 4 + t * .15, L = (i % 2 ? 40 : 95) * k * (.85 + .15 * Math.sin(t * 3 + i));
@@ -634,6 +708,7 @@ let lastT = now();
 function frame() {
   const t = now(), dt = Math.min(.05, t - lastT); lastT = t;
   processHands(t, dt);
+  updateBeat(t, dt);
   if (started) update(t, dt);
   render(t);
   if (recorder) document.getElementById('rec').textContent = '■ 停止 ' + fmt(t - recStart);
@@ -704,7 +779,7 @@ window.addEventListener('keydown', e => {
 
 resetScene();
 requestAnimationFrame(frame);
-window.__xmas = { get S() { return S; }, get hands() { return hands; } }; // for debugging
+window.__xmas = { get S() { return S; }, get hands() { return hands; }, beat, updateBeat }; // for debugging
 </script>
 </body>
 </html>
