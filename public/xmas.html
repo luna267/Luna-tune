@@ -326,7 +326,11 @@ async function initTracking() {
   try {
     const { FilesetResolver, HandLandmarker } = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
     const fs = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
-    const opts = d => ({ baseOptions: { modelAssetPath: 'models/hand_landmarker.task', delegate: d }, runningMode: 'VIDEO', numHands: 2,
+    // use the bundled model when it is served next to the page, otherwise Google's hosted copy
+    let model = 'models/hand_landmarker.task';
+    try { const r = await fetch(model, { method: 'HEAD' }); if (!r.ok) throw 0; }
+    catch { model = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task'; }
+    const opts = d => ({ baseOptions: { modelAssetPath: model, delegate: d }, runningMode: 'VIDEO', numHands: 2,
       minHandDetectionConfidence: .5, minHandPresenceConfidence: .5, minTrackingConfidence: .5 });
     try { landmarker = await HandLandmarker.createFromOptions(fs, opts('GPU')); }
     catch { landmarker = await HandLandmarker.createFromOptions(fs, opts('CPU')); }
